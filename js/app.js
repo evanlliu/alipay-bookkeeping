@@ -278,12 +278,9 @@
     const total = sum(expenses, () => true);
     const byCategory = groupSum(expenses, (r) => rawValue(r, 'category'));
     const byTag = groupSum(expenses, (r) => r.tag || '-');
-    const byAccount = groupSum(expenses, (r) => rawValue(r, 'account') || '');
-
     $('#categoryTotal').text(formatMoney(total));
     renderRankList('#categoryChart', byCategory, total, (key) => CashbookI18N.translateValue('category', key, state.lang));
     renderRankList('#tagChart', byTag, total, (key) => key || '-');
-    renderRankList('#accountChart', byAccount, total, (key) => CashbookI18N.translateValue('account', key, state.lang));
   }
 
   function renderTopExpenses(records) {
@@ -364,7 +361,6 @@
     rebuildFilterOptions();
     const records = currentScopeRecords();
     renderSummary(records);
-    renderTrend(records);
     renderBreakdowns(records);
     renderTopExpenses(records);
     renderRecords(records);
@@ -532,18 +528,6 @@
 
     $('#searchInput').on('input', function () {
       state.search = this.value;
-      renderAll();
-    });
-
-    $('#backupBtn').on('click', exportBackup);
-    $('#restoreBtn').on('click', () => $('#restoreInput').trigger('click'));
-    $('#restoreInput').on('change', (e) => restoreBackup(e.target.files[0]));
-
-    $('#clearBtn').on('click', () => {
-      if (!window.confirm(t('clearConfirm'))) return;
-      state.records = [];
-      CashbookStorage.clearRecords();
-      setImportMessage(t('cleared'), 'success');
       renderAll();
     });
 

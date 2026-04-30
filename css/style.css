@@ -142,7 +142,7 @@ button, input, select {
   min-width: 120px;
 }
 
-.upload-card, .filters, .panel, .summary-card {
+.upload-card, .collapse-card, .panel, .summary-card {
   background: var(--card);
   border: 1px solid rgba(226, 232, 240, .84);
   border-radius: var(--radius);
@@ -734,5 +734,131 @@ button, input, select {
   }
   .top-actions .select {
     grid-column: span 1;
+  }
+}
+
+/* v2 layout: collapsed filters/stat cards and simplified dashboard */
+.collapse-card {
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+
+.collapse-card summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px;
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+}
+
+.collapse-card summary::-webkit-details-marker {
+  display: none;
+}
+
+.collapse-card summary::after {
+  content: "⌄";
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: var(--muted);
+  font-weight: 800;
+  transition: transform .18s ease, background .18s ease;
+}
+
+.collapse-card[open] summary::after {
+  transform: rotate(180deg);
+  background: #e0e7ff;
+  color: var(--primary);
+}
+
+.collapse-card summary span {
+  font-weight: 800;
+  font-size: 16px;
+}
+
+.collapse-card summary small {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 13px;
+  text-align: right;
+}
+
+.filters-collapse .filter-grid {
+  padding: 0 16px 16px;
+}
+
+.summary-area {
+  display: grid;
+  grid-template-columns: minmax(260px, .7fr) minmax(360px, 1.3fr);
+  gap: 14px;
+  margin-bottom: 16px;
+  align-items: stretch;
+}
+
+.main-summary-card {
+  min-height: 154px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.main-summary-card strong {
+  font-size: clamp(34px, 5vw, 54px);
+}
+
+.stats-collapse {
+  margin-bottom: 0;
+}
+
+.stats-collapse .summary-grid {
+  padding: 0 16px 16px;
+  margin-bottom: 0;
+}
+
+.secondary-summary-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.compact-dashboard {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 1100px) {
+  .summary-area {
+    grid-template-columns: 1fr;
+  }
+  .compact-dashboard {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .collapse-card summary {
+    padding: 14px;
+    align-items: flex-start;
+  }
+  .collapse-card summary small {
+    display: none;
+  }
+  .filters-collapse .filter-grid,
+  .stats-collapse .summary-grid {
+    padding: 0 14px 14px;
+  }
+  .main-summary-card {
+    min-height: 138px;
+  }
+  .main-summary-card strong {
+    font-size: 36px;
+  }
+  .secondary-summary-grid,
+  .compact-dashboard {
+    grid-template-columns: 1fr;
   }
 }

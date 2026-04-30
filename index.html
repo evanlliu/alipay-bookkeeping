@@ -28,10 +28,6 @@
           <option value="en">English</option>
           <option value="tr">Türkçe</option>
         </select>
-        <button id="backupBtn" class="btn ghost" data-i18n="backup">备份</button>
-        <button id="restoreBtn" class="btn ghost" data-i18n="restore">恢复</button>
-        <button id="clearBtn" class="btn danger" data-i18n="clear">清空</button>
-        <input id="restoreInput" type="file" accept=".json" hidden />
       </div>
     </header>
 
@@ -55,7 +51,11 @@
         <div id="importMessage" class="import-message"></div>
       </section>
 
-      <section class="filters">
+      <details class="collapse-card filters-collapse">
+        <summary>
+          <span data-i18n="filterPanel">查询筛选</span>
+          <small data-i18n="filterPanelHint">选择月份、年份、分类和关键词</small>
+        </summary>
         <div class="filter-grid">
           <label>
             <span data-i18n="viewMode">查看方式</span>
@@ -90,40 +90,41 @@
             <input id="searchInput" class="input" type="search" placeholder="备注 / 账户 / 标签" />
           </label>
         </div>
-      </section>
+      </details>
 
-      <section class="summary-grid">
-        <article class="summary-card expense">
+      <section class="summary-area">
+        <article class="summary-card expense main-summary-card">
           <span data-i18n="totalExpense">总支出</span>
           <strong id="totalExpense">¥0.00</strong>
           <em id="expenseCount">0</em>
         </article>
-        <article class="summary-card income">
-          <span data-i18n="totalIncome">总收入</span>
-          <strong id="totalIncome">¥0.00</strong>
-          <em id="incomeCount">0</em>
-        </article>
-        <article class="summary-card neutral">
-          <span data-i18n="excluded">不计收支</span>
-          <strong id="totalExcluded">¥0.00</strong>
-          <em id="excludedCount">0</em>
-        </article>
-        <article class="summary-card net">
-          <span data-i18n="netCashflow">净现金流</span>
-          <strong id="netCashflow">¥0.00</strong>
-          <em id="recordCount">0</em>
-        </article>
+
+        <details class="collapse-card stats-collapse">
+          <summary>
+            <span data-i18n="moreStats">更多统计</span>
+            <small data-i18n="moreStatsHint">收入、不计收支、净现金流</small>
+          </summary>
+          <div class="summary-grid secondary-summary-grid">
+            <article class="summary-card income">
+              <span data-i18n="totalIncome">总收入</span>
+              <strong id="totalIncome">¥0.00</strong>
+              <em id="incomeCount">0</em>
+            </article>
+            <article class="summary-card neutral">
+              <span data-i18n="excluded">不计收支</span>
+              <strong id="totalExcluded">¥0.00</strong>
+              <em id="excludedCount">0</em>
+            </article>
+            <article class="summary-card net">
+              <span data-i18n="netCashflow">净现金流</span>
+              <strong id="netCashflow">¥0.00</strong>
+              <em id="recordCount">0</em>
+            </article>
+          </div>
+        </details>
       </section>
 
-      <section class="dashboard-grid">
-        <article class="panel wide">
-          <div class="panel-title">
-            <h3 id="trendTitle" data-i18n="expenseTrend">支出趋势</h3>
-            <small id="scopeText"></small>
-          </div>
-          <div id="trendChart" class="bar-chart"></div>
-        </article>
-
+      <section class="dashboard-grid compact-dashboard">
         <article class="panel">
           <div class="panel-title">
             <h3 data-i18n="categoryBreakdown">分类支出</h3>
@@ -138,14 +139,6 @@
             <small data-i18n="tagHint">看谁/什么花得最多</small>
           </div>
           <div id="tagChart" class="rank-list"></div>
-        </article>
-
-        <article class="panel">
-          <div class="panel-title">
-            <h3 data-i18n="accountBreakdown">账户支出</h3>
-            <small data-i18n="accountHint">银行卡/余额来源</small>
-          </div>
-          <div id="accountChart" class="rank-list"></div>
         </article>
 
         <article class="panel">
