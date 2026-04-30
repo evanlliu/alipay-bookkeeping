@@ -1,0 +1,353 @@
+/* global window */
+(function () {
+  const UI = {
+    zh: {
+      appTitle: '支付宝记账本支出看板',
+      appSubtitle: '本地导入 · 自动翻译 · 月度/年度支出分析',
+      backup: '备份',
+      restore: '恢复',
+      clear: '清空',
+      importTitle: '导入支付宝记账本模板',
+      importHint: '支持 CSV / XLS / XLSX。按你上传的模板识别：记录时间、分类、收支类型、金额、备注、账户、来源、标签。',
+      selectFile: '选择文件导入',
+      replaceExisting: '导入时覆盖现有数据',
+      viewMode: '查看方式',
+      byMonth: '按月',
+      byYear: '按年',
+      allData: '全部',
+      month: '月份',
+      year: '年份',
+      category: '分类',
+      type: '收支类型',
+      tag: '标签',
+      search: '搜索',
+      totalExpense: '总支出',
+      totalIncome: '总收入',
+      excluded: '不计收支',
+      netCashflow: '净现金流',
+      expenseTrend: '支出趋势',
+      categoryBreakdown: '分类支出',
+      tagBreakdown: '标签支出',
+      tagHint: '看谁/什么花得最多',
+      accountBreakdown: '账户支出',
+      accountHint: '银行卡/余额来源',
+      topExpenses: '最大支出 TOP 10',
+      topHint: '按金额排序',
+      records: '明细记录',
+      date: '日期',
+      amount: '金额',
+      note: '备注',
+      account: '账户',
+      source: '来源',
+      emptyTitle: '还没有数据',
+      emptyText: '先导入支付宝记账本 CSV / Excel，然后这里会生成支出看板。',
+      allCategories: '全部分类',
+      allTypes: '全部类型',
+      allTags: '全部标签',
+      countSuffix: '笔',
+      imported: '导入成功',
+      importedRows: '条记录',
+      importFailed: '导入失败',
+      noTemplate: '没有找到支付宝记账本表头，请确认文件包含：记录时间、分类、收支类型、金额、备注、账户、来源、标签。',
+      backupDone: '备份文件已生成。',
+      restoreDone: '恢复成功。',
+      clearConfirm: '确定清空本地保存的记账数据吗？',
+      cleared: '已清空。',
+      noDataToBackup: '当前没有可备份的数据。',
+      parseError: '文件解析失败，请确认文件格式。',
+      income: '收入',
+      expense: '支出',
+      neutral: '不计收支',
+      scopeAll: '全部数据',
+      latestMonth: '最新月份',
+      latestYear: '最新年份',
+      noRows: '当前筛选条件下没有记录',
+      searchPlaceholder: '备注 / 账户 / 标签'
+    },
+    en: {
+      appTitle: 'Alipay Cashbook Expense Dashboard',
+      appSubtitle: 'Local import · Auto translation · Monthly/yearly analytics',
+      backup: 'Backup',
+      restore: 'Restore',
+      clear: 'Clear',
+      importTitle: 'Import Alipay cashbook template',
+      importHint: 'Supports CSV / XLS / XLSX. Template fields: time, category, type, amount, note, account, source, tag.',
+      selectFile: 'Import file',
+      replaceExisting: 'Replace existing data',
+      viewMode: 'View',
+      byMonth: 'Monthly',
+      byYear: 'Yearly',
+      allData: 'All',
+      month: 'Month',
+      year: 'Year',
+      category: 'Category',
+      type: 'Type',
+      tag: 'Tag',
+      search: 'Search',
+      totalExpense: 'Total expense',
+      totalIncome: 'Total income',
+      excluded: 'Excluded',
+      netCashflow: 'Net cashflow',
+      expenseTrend: 'Expense trend',
+      categoryBreakdown: 'By category',
+      tagBreakdown: 'By tag',
+      tagHint: 'Who / what costs most',
+      accountBreakdown: 'By account',
+      accountHint: 'Bank card / balance',
+      topExpenses: 'Top 10 expenses',
+      topHint: 'Sorted by amount',
+      records: 'Records',
+      date: 'Date',
+      amount: 'Amount',
+      note: 'Note',
+      account: 'Account',
+      source: 'Source',
+      emptyTitle: 'No data yet',
+      emptyText: 'Import the Alipay CSV / Excel file first, then the dashboard will be generated here.',
+      allCategories: 'All categories',
+      allTypes: 'All types',
+      allTags: 'All tags',
+      countSuffix: 'records',
+      imported: 'Imported',
+      importedRows: 'records',
+      importFailed: 'Import failed',
+      noTemplate: 'Cannot find the Alipay cashbook header. Required fields: time, category, type, amount, note, account, source, tag.',
+      backupDone: 'Backup file generated.',
+      restoreDone: 'Restored successfully.',
+      clearConfirm: 'Clear locally saved cashbook data?',
+      cleared: 'Cleared.',
+      noDataToBackup: 'No data to backup.',
+      parseError: 'Failed to parse file. Please check the file format.',
+      income: 'Income',
+      expense: 'Expense',
+      neutral: 'Excluded',
+      scopeAll: 'All data',
+      latestMonth: 'Latest month',
+      latestYear: 'Latest year',
+      noRows: 'No records for current filters',
+      searchPlaceholder: 'Note / account / tag'
+    },
+    tr: {
+      appTitle: 'Alipay Harcama Panosu',
+      appSubtitle: 'Yerel içe aktarma · Otomatik çeviri · Aylık/yıllık analiz',
+      backup: 'Yedekle',
+      restore: 'Geri yükle',
+      clear: 'Temizle',
+      importTitle: 'Alipay kayıt şablonunu içe aktar',
+      importHint: 'CSV / XLS / XLSX desteklenir. Şablon alanları: zaman, kategori, tür, tutar, not, hesap, kaynak, etiket.',
+      selectFile: 'Dosya içe aktar',
+      replaceExisting: 'Mevcut veriyi değiştir',
+      viewMode: 'Görünüm',
+      byMonth: 'Aylık',
+      byYear: 'Yıllık',
+      allData: 'Tümü',
+      month: 'Ay',
+      year: 'Yıl',
+      category: 'Kategori',
+      type: 'Tür',
+      tag: 'Etiket',
+      search: 'Ara',
+      totalExpense: 'Toplam gider',
+      totalIncome: 'Toplam gelir',
+      excluded: 'Hariç',
+      netCashflow: 'Net nakit akışı',
+      expenseTrend: 'Gider trendi',
+      categoryBreakdown: 'Kategoriye göre',
+      tagBreakdown: 'Etikete göre',
+      tagHint: 'En çok kim/ne harcadı',
+      accountBreakdown: 'Hesaba göre',
+      accountHint: 'Banka kartı / bakiye',
+      topExpenses: 'En büyük 10 gider',
+      topHint: 'Tutara göre sıralı',
+      records: 'Kayıtlar',
+      date: 'Tarih',
+      amount: 'Tutar',
+      note: 'Not',
+      account: 'Hesap',
+      source: 'Kaynak',
+      emptyTitle: 'Henüz veri yok',
+      emptyText: 'Önce Alipay CSV / Excel dosyasını içe aktarın, pano burada oluşacak.',
+      allCategories: 'Tüm kategoriler',
+      allTypes: 'Tüm türler',
+      allTags: 'Tüm etiketler',
+      countSuffix: 'kayıt',
+      imported: 'İçe aktarıldı',
+      importedRows: 'kayıt',
+      importFailed: 'İçe aktarma başarısız',
+      noTemplate: 'Alipay kayıt başlığı bulunamadı. Gerekli alanlar: zaman, kategori, tür, tutar, not, hesap, kaynak, etiket.',
+      backupDone: 'Yedek dosyası oluşturuldu.',
+      restoreDone: 'Başarıyla geri yüklendi.',
+      clearConfirm: 'Yerel kayıt verileri temizlensin mi?',
+      cleared: 'Temizlendi.',
+      noDataToBackup: 'Yedeklenecek veri yok.',
+      parseError: 'Dosya ayrıştırılamadı. Lütfen formatı kontrol edin.',
+      income: 'Gelir',
+      expense: 'Gider',
+      neutral: 'Hariç',
+      scopeAll: 'Tüm veriler',
+      latestMonth: 'Son ay',
+      latestYear: 'Son yıl',
+      noRows: 'Mevcut filtrelerde kayıt yok',
+      searchPlaceholder: 'Not / hesap / etiket'
+    }
+  };
+
+  const DATA = {
+    category: {
+      '弹性支出': { en: 'Flexible spending', tr: 'Esnek gider' },
+      '退款': { en: 'Refund', tr: 'İade' },
+      '生活所需': { en: 'Daily essentials', tr: 'Günlük ihtiyaçlar' },
+      '交通': { en: 'Transport', tr: 'Ulaşım' },
+      '?交通': { en: 'Transport', tr: 'Ulaşım' },
+      '餐饮': { en: 'Dining', tr: 'Yeme-içme' },
+      '?餐饮': { en: 'Dining', tr: 'Yeme-içme' },
+      '投资理财': { en: 'Investment & finance', tr: 'Yatırım ve finans' },
+      '转账': { en: 'Transfer', tr: 'Transfer' },
+      '医疗健康': { en: 'Medical & health', tr: 'Sağlık' },
+      '人情社交': { en: 'Social & gifts', tr: 'Sosyal ve hediye' },
+      '固定支出': { en: 'Fixed expenses', tr: 'Sabit giderler' },
+      '教育提升': { en: 'Education', tr: 'Eğitim' },
+      '娃': { en: 'Baby / child', tr: 'Bebek / çocuk' },
+      '充电': { en: 'Charging', tr: 'Şarj' },
+      '?充电': { en: 'Charging', tr: 'Şarj' },
+      '礼品': { en: 'Gifts', tr: 'Hediyeler' },
+      '?礼品': { en: 'Gifts', tr: 'Hediyeler' },
+      '拍照': { en: 'Photography', tr: 'Fotoğraf' },
+      '?拍照': { en: 'Photography', tr: 'Fotoğraf' },
+      '借还款': { en: 'Loans / repayments', tr: 'Borç / geri ödeme' },
+      '购物': { en: 'Shopping', tr: 'Alışveriş' },
+      '?购物': { en: 'Shopping', tr: 'Alışveriş' },
+      '住宿': { en: 'Accommodation', tr: 'Konaklama' },
+      '?住宿': { en: 'Accommodation', tr: 'Konaklama' },
+      '其他': { en: 'Other', tr: 'Diğer' }
+    },
+    type: {
+      '支出': { en: 'Expense', tr: 'Gider' },
+      '收入': { en: 'Income', tr: 'Gelir' },
+      '不计收支': { en: 'Excluded', tr: 'Hariç' }
+    },
+    account: {
+      '招商银行': { en: 'China Merchants Bank', tr: 'China Merchants Bank' },
+      '网商银行': { en: 'MYbank', tr: 'MYbank' },
+      '余额': { en: 'Alipay balance', tr: 'Alipay bakiyesi' },
+      '广发银行': { en: 'China Guangfa Bank', tr: 'China Guangfa Bank' },
+      '中国银行': { en: 'Bank of China', tr: 'Bank of China' },
+      '中国工商银行': { en: 'ICBC', tr: 'ICBC' },
+      '广州银行': { en: 'Bank of Guangzhou', tr: 'Bank of Guangzhou' },
+      '中国建设银行': { en: 'China Construction Bank', tr: 'China Construction Bank' },
+      '花呗': { en: 'Huabei', tr: 'Huabei' },
+      '网商银行|广发银行': { en: 'MYbank | China Guangfa Bank', tr: 'MYbank | China Guangfa Bank' },
+      '中国建设银行|花呗': { en: 'China Construction Bank | Huabei', tr: 'China Construction Bank | Huabei' },
+      '': { en: 'Unspecified', tr: 'Belirtilmemiş' }
+    },
+    source: {
+      '账单同步': { en: 'Bill sync', tr: 'Fatura senkronizasyonu' },
+      '手动记账': { en: 'Manual entry', tr: 'Manuel kayıt' },
+      '快捷指令记账': { en: 'Shortcut entry', tr: 'Kestirme kayıt' }
+    },
+    words: [
+      ['亲情卡-老婆', 'Family card - wife', 'Aile kartı - eş'],
+      ['蜜雪冰城', 'Mixue', 'Mixue'],
+      ['泡泡枪', 'Bubble gun', 'Baloncuk tabancası'],
+      ['尿不湿', 'Diapers', 'Bebek bezi'],
+      ['爱他美奶粉', 'Aptamil milk powder', 'Aptamil mama'],
+      ['奶粉', 'Milk powder', 'Mama'],
+      ['湿巾纸', 'Wet wipes', 'Islak mendil'],
+      ['退款', 'Refund', 'İade'],
+      ['商户单号', 'Merchant order no.', 'Satıcı sipariş no.'],
+      ['复制该单号', 'Copy this order number', 'Bu sipariş numarasını kopyala'],
+      ['支付宝转入到余利宝', 'Alipay transfer to Yu Libao', 'Alipay Yu Libao transferi'],
+      ['支付宝转账小额打款', 'Small Alipay transfer', 'Küçük Alipay transferi'],
+      ['关联订单号', 'Related order no.', 'İlgili sipariş no.'],
+      ['收款', 'Payment received', 'Ödeme alındı'],
+      ['发声书', 'Sound book', 'Sesli kitap'],
+      ['摇摇车', 'Kiddie ride', 'Çocuk oyun aracı'],
+      ['驱蚊液', 'Mosquito repellent', 'Sivrisinek kovucu'],
+      ['防蚊喷雾', 'Mosquito spray', 'Sivrisinek spreyi'],
+      ['儿童宝宝', 'Kids / baby', 'Çocuk / bebek'],
+      ['宝宝', 'Baby', 'Bebek'],
+      ['拼多多', 'Pinduoduo', 'Pinduoduo'],
+      ['支付宝', 'Alipay', 'Alipay'],
+      ['余额宝', 'Yu’e Bao', 'Yu’e Bao'],
+      ['余利宝', 'Yu Libao', 'Yu Libao'],
+      ['话费', 'Phone bill', 'Telefon faturası'],
+      ['电费', 'Electricity bill', 'Elektrik faturası'],
+      ['水费', 'Water bill', 'Su faturası'],
+      ['房租', 'Rent', 'Kira'],
+      ['打车', 'Taxi', 'Taksi'],
+      ['地铁', 'Metro', 'Metro'],
+      ['公交', 'Bus', 'Otobüs'],
+      ['高铁', 'High-speed rail', 'Yüksek hızlı tren'],
+      ['火车', 'Train', 'Tren'],
+      ['飞机', 'Flight', 'Uçuş'],
+      ['酒店', 'Hotel', 'Otel'],
+      ['外卖', 'Food delivery', 'Yemek teslimatı'],
+      ['餐厅', 'Restaurant', 'Restoran'],
+      ['超市', 'Supermarket', 'Süpermarket'],
+      ['水果', 'Fruit', 'Meyve'],
+      ['药', 'Medicine', 'İlaç'],
+      ['医院', 'Hospital', 'Hastane'],
+      ['体检', 'Medical checkup', 'Sağlık kontrolü'],
+      ['衣服', 'Clothes', 'Kıyafet'],
+      ['鞋', 'Shoes', 'Ayakkabı'],
+      ['老婆', 'Wife', 'Eş'],
+      ['妈妈', 'Mother', 'Anne'],
+      ['爸爸', 'Father', 'Baba']
+    ]
+  };
+
+  function stripPrefix(value) {
+    return String(value || '').trim().replace(/^[^\u4e00-\u9fa5A-Za-z0-9]+/, '');
+  }
+
+  function translateValue(kind, value, lang) {
+    const raw = String(value ?? '').trim();
+    if (lang === 'zh') return raw || '-';
+    const dict = DATA[kind] || {};
+    const cleaned = stripPrefix(raw);
+    if (dict[raw] && dict[raw][lang]) return dict[raw][lang];
+    if (dict[cleaned] && dict[cleaned][lang]) return dict[cleaned][lang];
+    return raw || '-';
+  }
+
+  function translateNote(value, lang) {
+    const raw = String(value ?? '').trim();
+    if (lang === 'zh' || !raw) return raw || '-';
+    let out = raw;
+    const sorted = DATA.words.slice().sort((a, b) => b[0].length - a[0].length);
+    sorted.forEach(([zh, en, tr]) => {
+      const target = lang === 'tr' ? tr : en;
+      out = out.split(zh).join(target);
+    });
+    return out || raw;
+  }
+
+  function makeLangValue(kind, value) {
+    if (kind === 'note') {
+      return {
+        zh: String(value ?? '').trim(),
+        en: translateNote(value, 'en'),
+        tr: translateNote(value, 'tr')
+      };
+    }
+    return {
+      zh: String(value ?? '').trim(),
+      en: translateValue(kind, value, 'en'),
+      tr: translateValue(kind, value, 'tr')
+    };
+  }
+
+  function t(key, lang) {
+    const current = UI[lang] || UI.zh;
+    return current[key] || UI.zh[key] || key;
+  }
+
+  window.CashbookI18N = {
+    UI,
+    DATA,
+    t,
+    translateValue,
+    translateNote,
+    makeLangValue
+  };
+})();
