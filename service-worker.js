@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cashbook-dashboard-v13-simple-github-sync-20260430';
+const CACHE_NAME = 'cashbook-dashboard-v14-token-in-data-json-20260430';
 const ASSETS = [
   './',
   './index.html',

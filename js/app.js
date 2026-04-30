@@ -112,6 +112,26 @@
     $('#githubToken').val(state.githubToken || '');
   }
 
+  function applyGithubConfigFromDataJson(payload) {
+    const github = (payload && (payload.github || payload.sync || payload.githubSync)) || {};
+    const owner = github.owner || github.githubOwner || payload.githubOwner || '';
+    const repo = github.repo || github.repository || github.githubRepo || payload.githubRepo || '';
+    const branch = github.branch || github.githubBranch || payload.githubBranch || '';
+    const token = github.token || github.githubToken || payload.githubToken || '';
+
+    if (owner) state.githubOwner = String(owner).trim();
+    if (repo) state.githubRepo = String(repo).trim();
+    if (branch) state.githubBranch = String(branch).trim() || 'main';
+    if (token) {
+      state.githubToken = String(token).trim();
+      localStorage.setItem('alipay_cashbook_github_token', state.githubToken);
+      sessionStorage.setItem('alipay_cashbook_github_token', state.githubToken);
+    }
+
+    saveSettings();
+    syncGithubForm();
+  }
+
   function readGithubForm() {
     state.githubOwner = String($('#githubOwner').val() || '').trim();
     state.githubRepo = String($('#githubRepo').val() || '').trim();
@@ -738,8 +758,14 @@
     const rows = Array.isArray(records) ? records : [];
     return {
       app: 'alipay-cashbook-dashboard',
-      version: 13,
+      version: 14,
       updatedAt: new Date().toISOString(),
+      github: {
+        owner: state.githubOwner || '',
+        repo: state.githubRepo || '',
+        branch: state.githubBranch || 'main',
+        token: state.githubToken || ''
+      },
       total: rows.length,
       records: rows
     };
@@ -786,9 +812,14 @@
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
       const payload = await response.json();
+      applyGithubConfigFromDataJson(payload);
       const records = Array.isArray(payload.records) ? payload.records : [];
 
       if (!records.length) {
+        if (force) {
+          state.records = [];
+          renderAll();
+        }
         if (!silent) setImportMessage(t('dataJsonEmpty'), 'error');
         return false;
       }
@@ -885,10 +916,18 @@
     $('#importBtn').on('click', () => $('#fileInput').trigger('click'));
     $('#fileInput').on('change', (e) => handleImport(e.target.files[0]));
 
-    $('#saveGithubSettings').on('click', function () {
+    $('#saveGithubSettings').on('click', async function () {
       readGithubForm();
       saveSettings();
-      setImportMessage(t('githubSettingsSaved'), 'success');
+      try {
+        const committed = await commitDataJsonToGithub(state.records);
+        if (committed) {
+          setImportMessage(t('githubSettingsSavedToDataJson'), 'success');
+        }
+      } catch (err) {
+        console.error(err);
+        setImportMessage(`${t('githubUpdateFailed')}：${err.message || t('parseError')}`, 'error');
+      }
     });
 
     $('#langSelect').on('change', function () {
