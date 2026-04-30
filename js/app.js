@@ -12,7 +12,8 @@
     search: '',
     sortKey: 'time',
     sortDir: 'desc',
-    workerUrl: ''
+    workerUrl: '',
+    accessPassword: ''
   };
 
   const typeZh = {
@@ -84,6 +85,33 @@
     return String(url || '').trim().replace(/\/+$/, '');
   }
 
+  function normalizeAccessPassword(value) {
+    return String(value || '').trim();
+  }
+
+  function getSyncConfigFromPayload(payload) {
+    const sync = payload && payload.sync && typeof payload.sync === 'object' ? payload.sync : {};
+    return {
+      workerUrl: normalizeWorkerUrl(sync.workerUrl || sync.workerURL || sync.url || ''),
+      accessPassword: normalizeAccessPassword(sync.accessPassword || sync.password || sync.apiPassword || '')
+    };
+  }
+
+  function applySyncConfig(config, options = {}) {
+    if (!config) return;
+    const nextWorkerUrl = normalizeWorkerUrl(config.workerUrl);
+    const nextPassword = normalizeAccessPassword(config.accessPassword);
+
+    if (nextWorkerUrl) state.workerUrl = nextWorkerUrl;
+    if (nextPassword || options.allowEmptyPassword) state.accessPassword = nextPassword;
+
+    if (state.workerUrl) localStorage.setItem('alipay_cashbook_worker_url', state.workerUrl);
+    if (state.accessPassword) localStorage.setItem('alipay_cashbook_access_password', state.accessPassword);
+    if (options.allowEmptyPassword && !state.accessPassword) localStorage.removeItem('alipay_cashbook_access_password');
+
+    syncSettingsForm();
+  }
+
   function loadWorkerSettings() {
     const settings = CashbookStorage.loadSettings();
     const config = window.CASHBOOK_SYNC_CONFIG || {};
@@ -93,23 +121,39 @@
       localStorage.getItem('alipay_cashbook_worker_url') ||
       ''
     );
+    state.accessPassword = normalizeAccessPassword(
+      config.accessPassword ||
+      settings.accessPassword ||
+      localStorage.getItem('alipay_cashbook_access_password') ||
+      ''
+    );
   }
 
-  function syncWorkerForm() {
-    $('#workerUrl').val(state.workerUrl || '');
+  function syncSettingsForm() {
+    $('#syncWorkerUrl').val(state.workerUrl || '');
+    $('#syncAccessPassword').val(state.accessPassword || '');
   }
 
-  function readWorkerForm() {
-    state.workerUrl = normalizeWorkerUrl($('#workerUrl').val());
-    if (state.workerUrl) {
-      localStorage.setItem('alipay_cashbook_worker_url', state.workerUrl);
-    }
+  function readSyncSettingsForm() {
+    const workerUrl = normalizeWorkerUrl($('#syncWorkerUrl').val());
+    const accessPassword = normalizeAccessPassword($('#syncAccessPassword').val());
+    applySyncConfig({ workerUrl, accessPassword }, { allowEmptyPassword: true });
+    saveSettings();
+  }
+
+  function openSyncSettingsModal() {
+    syncSettingsForm();
+    $('#syncSettingsModal').prop('hidden', false);
+    setTimeout(() => $('#syncWorkerUrl').trigger('focus'), 0);
+  }
+
+  function closeSyncSettingsModal() {
+    $('#syncSettingsModal').prop('hidden', true);
   }
 
   function validateWorkerConfig() {
-    readWorkerForm();
     if (!state.workerUrl) {
-      $('#workerSyncCard').prop('open', true);
+      openSyncSettingsModal();
       setImportMessage(t('workerConfigRequired'), 'error');
       return false;
     }
@@ -128,6 +172,10 @@
       },
       cache: 'no-store'
     };
+
+    if (state.accessPassword) {
+      options.headers['X-Access-Password'] = state.accessPassword;
+    }
 
     if (payload !== undefined) {
       options.headers['Content-Type'] = 'application/json;charset=utf-8';
@@ -160,14 +208,17 @@
     return true;
   }
 
+  async function fetchLocalDataJsonPayload() {
+    const response = await fetch(`./data.json?_=${Date.now()}`, { cache: 'no-store' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+
   async function fetchDataJsonPayload() {
     if (state.workerUrl) {
       return workerApi('GET');
     }
-
-    const response = await fetch(`./data.json?_=${Date.now()}`, { cache: 'no-store' });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    return response.json();
+    return fetchLocalDataJsonPayload();
   }
 
   function sum(records, predicate) {
@@ -697,8 +748,13 @@
     const rows = Array.isArray(records) ? records : [];
     return {
       app: 'alipay-cashbook-dashboard',
-      version: 15,
+      version: 16,
       updatedAt: new Date().toISOString(),
+      sync: {
+        provider: 'cloudflare-worker',
+        workerUrl: state.workerUrl || '',
+        accessPassword: state.accessPassword || ''
+      },
       total: rows.length,
       records: rows
     };
@@ -722,6 +778,7 @@
   }
 
   function applyDataJsonPayload(payload) {
+    applySyncConfig(getSyncConfigFromPayload(payload));
     const records = Array.isArray(payload.records) ? payload.records : [];
     state.records = records.sort((a, b) => String(b.time || '').localeCompare(String(a.time || '')));
     state.selectedMonth = '';
@@ -741,17 +798,36 @@
     const silent = !!options.silent;
 
     try {
-      const payload = await fetchDataJsonPayload();
-      const records = Array.isArray(payload.records) ? payload.records : [];
+      let payload = null;
 
-      if (!records.length) {
-        if (!silent) setImportMessage(t('dataJsonEmpty'), 'error');
-        return false;
+      try {
+        const localPayload = await fetchLocalDataJsonPayload();
+        applySyncConfig(getSyncConfigFromPayload(localPayload));
+        payload = localPayload;
+      } catch (localErr) {
+        console.warn('Failed to load local data.json', localErr);
       }
+
+      if (state.workerUrl) {
+        try {
+          payload = await workerApi('GET');
+          applySyncConfig(getSyncConfigFromPayload(payload));
+        } catch (workerErr) {
+          console.warn('Failed to load data.json from Worker', workerErr);
+          if (!payload) throw workerErr;
+        }
+      }
+
+      if (!payload) throw new Error('NO_DATA_JSON');
+
+      const records = Array.isArray(payload.records) ? payload.records : [];
 
       if (force || !state.records.length) {
         applyDataJsonPayload(payload);
-        if (!silent) setImportMessage(`${t('dataJsonLoaded')} ${records.length} ${t('importedRows')}`, 'success');
+        if (!silent) {
+          const msgKey = records.length ? 'dataJsonLoaded' : 'dataJsonEmpty';
+          setImportMessage(records.length ? `${t(msgKey)} ${records.length} ${t('importedRows')}` : t(msgKey), records.length ? 'success' : 'error');
+        }
         return true;
       }
 
@@ -831,7 +907,8 @@
       search: state.search,
       sortKey: state.sortKey,
       sortDir: state.sortDir,
-      workerUrl: state.workerUrl
+      workerUrl: state.workerUrl,
+      accessPassword: state.accessPassword
     });
   }
 
@@ -839,11 +916,30 @@
     $('#importBtn').on('click', () => $('#fileInput').trigger('click'));
     $('#fileInput').on('change', (e) => handleImport(e.target.files[0]));
 
-    $('#saveWorkerSettings').on('click', function () {
-      readWorkerForm();
-      saveSettings();
-      setImportMessage(t('workerSettingsSaved'), 'success');
-      loadDataJson({ silent: false, force: true });
+    $('#openSyncSettings').on('click', function () {
+      openSyncSettingsModal();
+    });
+
+    $('#closeSyncSettings, #cancelSyncSettings').on('click', function () {
+      closeSyncSettingsModal();
+    });
+
+    $('#syncSettingsModal').on('click', function (e) {
+      if (e.target === this) closeSyncSettingsModal();
+    });
+
+    $('#saveSyncSettings').on('click', async function () {
+      try {
+        readSyncSettingsForm();
+        if (!validateWorkerConfig()) return;
+        await commitDataJsonViaWorker(state.records);
+        closeSyncSettingsModal();
+        setImportMessage(t('syncSettingsSavedCloud'), 'success');
+        await loadDataJson({ silent: true, force: true });
+      } catch (err) {
+        console.error(err);
+        setImportMessage(`${t('syncSettingsSaveFailed')}：${err.message || err}`, 'error');
+      }
     });
 
     $('#langSelect').on('change', function () {
@@ -971,7 +1067,7 @@
     $('#langSelect').val(state.lang);
     $('#viewMode').val(state.viewMode);
     $('#searchInput').val(state.search);
-    syncWorkerForm();
+    syncSettingsForm();
     bindEvents();
     renderAll();
     await loadDataJson({ silent: false, force: true });

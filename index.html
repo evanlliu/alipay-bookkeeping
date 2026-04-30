@@ -49,6 +49,7 @@
             <p data-i18n="importHint">支持 CSV / XLS / XLSX。按你上传的模板识别：记录时间、分类、收支类型、金额、备注、账户、来源、标签。</p>
             <div class="upload-actions">
               <button id="importBtn" class="btn primary" data-i18n="selectFile">选择文件导入</button>
+              <button id="openSyncSettings" class="btn ghost" type="button" data-i18n="syncSettings">同步设置</button>
               <label class="checkline">
                 <input id="replaceExisting" type="checkbox" checked />
                 <span data-i18n="replaceExisting">导入时覆盖现有数据</span>
@@ -60,23 +61,6 @@
         <div id="importMessage" class="import-message"></div>
       </section>
 
-
-      <details class="collapse-card github-sync-card" id="workerSyncCard">
-        <summary>
-          <span data-i18n="workerSyncSettings">Cloudflare Worker 同步</span>
-          <small data-i18n="workerSyncHint">Token 放在 Worker 环境变量里，导入后自动更新 data.json</small>
-        </summary>
-        <div class="github-sync-grid worker-sync-grid">
-          <label class="github-token-field">
-            <span data-i18n="workerUrl">Worker URL</span>
-            <input id="workerUrl" class="input" type="url" placeholder="https://你的-worker.workers.dev" autocomplete="off" />
-          </label>
-          <div class="github-sync-actions">
-            <button id="saveWorkerSettings" class="btn primary" type="button" data-i18n="saveWorkerSettings">保存 Worker 地址</button>
-            <small data-i18n="workerUrlSecurity">推荐把 Worker URL 写入 js/sync-config.js，这样所有设备都会自动使用。</small>
-          </div>
-        </div>
-      </details>
 
       <details class="collapse-card filters-collapse">
         <summary>
@@ -227,6 +211,32 @@
         </div>
       </section>
     </main>
+  </div>
+
+  <div id="syncSettingsModal" class="modal-backdrop" hidden>
+    <div class="sync-modal" role="dialog" aria-modal="true" aria-labelledby="syncSettingsTitle">
+      <div class="sync-modal-header">
+        <h2 id="syncSettingsTitle" data-i18n="syncSettings">同步设置</h2>
+        <button id="closeSyncSettings" class="modal-close" type="button" data-i18n="close">关闭</button>
+      </div>
+      <div class="sync-modal-body">
+        <label class="sync-field">
+          <span data-i18n="cloudflareWorkerApiUrl">Cloudflare Worker API 地址</span>
+          <input id="syncWorkerUrl" class="input" type="url" placeholder="https://your-worker.workers.dev/data" autocomplete="off" />
+        </label>
+        <label class="sync-field">
+          <span data-i18n="accessPassword">访问密码</span>
+          <input id="syncAccessPassword" class="input" type="password" placeholder="********" autocomplete="off" />
+        </label>
+        <div class="sync-note" data-i18n="syncConfigNote">
+          API 地址和访问密码会写入云端配置/备份 JSON。任意设备保存一次后，其他设备打开页面会自动读取云端配置和数据。你仍然可以在这里自定义 Worker 地址和访问密码。
+        </div>
+      </div>
+      <div class="sync-modal-footer">
+        <button id="cancelSyncSettings" class="btn ghost" type="button" data-i18n="cancel">取消</button>
+        <button id="saveSyncSettings" class="btn primary" type="button" data-i18n="saveSyncSettings">保存同步设置</button>
+      </div>
+    </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>

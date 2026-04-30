@@ -1,22 +1,29 @@
-# 支付宝记账本支出看板 V15 - Cloudflare Worker 同步版
+# 支付宝记账本支出看板 V16 - 页面同步设置版
 
 ## 这版解决什么问题
 
-V15 不再把 GitHub Token 放在前端代码或 `data.json` 里。
-
-同步逻辑：
+V16 把 Cloudflare Worker 同步配置做成了页面弹窗：
 
 ```text
-GitHub Pages 网页
-        ↓
-Cloudflare Worker
-        ↓
-GitHub API
-        ↓
-更新仓库根目录 data.json
+同步设置
+Cloudflare Worker API 地址
+访问密码
 ```
 
-这样其他手机/电脑打开同一个 GitHub Pages 地址时，会自动读取最新的 `data.json`。
+保存后，配置会写入仓库根目录的 `data.json`：
+
+```json
+{
+  "sync": {
+    "provider": "cloudflare-worker",
+    "workerUrl": "https://your-worker.workers.dev/data",
+    "accessPassword": "你的访问密码"
+  },
+  "records": []
+}
+```
+
+任意设备只要打开同一个 GitHub Pages 地址，就会先读取 `data.json` 里的同步配置，然后自动通过 Worker 读取最新数据。
 
 ---
 
@@ -41,7 +48,7 @@ assets/
 ## 二、部署 Cloudflare Worker
 
 1. 打开 Cloudflare Dashboard
-2. Workers & Pages
+2. 进入 Workers & Pages
 3. Create Worker
 4. 把本项目里的 `cloudflare-worker.js` 内容复制进去
 5. Deploy
@@ -53,40 +60,35 @@ assets/
 在 Cloudflare Worker 的 Settings / Variables 里添加：
 
 ```text
-GH_TOKEN   你的 GitHub Token
-GH_OWNER   evanlliu
-GH_REPO    alipay-bookkeeping
-GH_BRANCH  main
-DATA_PATH  data.json
+GH_TOKEN         你的 GitHub Token
+GH_OWNER         evanlliu
+GH_REPO          alipay-bookkeeping
+GH_BRANCH        main
+DATA_PATH        data.json
+ACCESS_PASSWORD  访问密码，可选，但建议设置
 ```
 
 `GH_TOKEN` 需要 GitHub 仓库 `Contents: Read and write` 权限。
 
+如果设置了 `ACCESS_PASSWORD`，页面同步设置里的“访问密码”必须和这里一样。
+
 ---
 
-## 四、配置网页使用 Worker
+## 四、在页面保存同步设置
 
-打开：
+打开 GitHub Pages 网站后：
 
 ```text
-js/sync-config.js
+点击“同步设置”
+        ↓
+输入 Cloudflare Worker API 地址
+        ↓
+输入访问密码
+        ↓
+保存同步设置
 ```
 
-把里面的：
-
-```js
-workerUrl: ''
-```
-
-改成你的 Worker 地址，例如：
-
-```js
-workerUrl: 'https://alipay-cashbook-sync.xxx.workers.dev'
-```
-
-然后上传覆盖 GitHub。
-
-如果不想改文件，也可以在网页里的“Cloudflare Worker 同步”里填 Worker URL 并保存，但这样只会保存在当前浏览器。
+保存成功后，Worker 会把这些配置写入 `data.json`。以后其他设备打开页面，会自动读取这些配置。
 
 ---
 
@@ -95,11 +97,13 @@ workerUrl: 'https://alipay-cashbook-sync.xxx.workers.dev'
 ```text
 打开网页
         ↓
+自动读取 data.json 里的同步配置
+        ↓
 自动通过 Worker 读取 GitHub data.json
         ↓
 导入支付宝 CSV / Excel
         ↓
-如果勾选“导入时覆盖现有数据”，则覆盖整个 data.json
+勾选“导入时覆盖现有数据”则覆盖整个 data.json
         ↓
 Worker 自动提交 data.json 到 GitHub
         ↓

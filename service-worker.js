@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cashbook-dashboard-v15-cloudflare-worker-20260430';
+const CACHE_NAME = 'cashbook-dashboard-v16-sync-modal-20260430';
 const ASSETS = [
   './',
   './index.html',

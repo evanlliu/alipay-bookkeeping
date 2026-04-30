@@ -7,12 +7,13 @@
  * GH_REPO   必填：例如 alipay-bookkeeping
  * GH_BRANCH 可选：默认 main
  * DATA_PATH 可选：默认 data.json
+ * ACCESS_PASSWORD 可选：访问密码；如果设置，前端请求必须带 X-Access-Password
  */
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET,POST,PUT,OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Allow-Headers': 'Content-Type, X-Access-Password',
   'Access-Control-Max-Age': '86400'
 };
 
@@ -25,6 +26,18 @@ function jsonResponse(body, status = 200) {
       'Cache-Control': 'no-store'
     }
   });
+}
+
+
+function verifyAccessPassword(request, env) {
+  const expected = env.ACCESS_PASSWORD || '';
+  if (!expected) return;
+  const provided = request.headers.get('X-Access-Password') || '';
+  if (provided !== expected) {
+    const err = new Error('Invalid access password');
+    err.status = 401;
+    throw err;
+  }
 }
 
 function requireEnv(env, name) {
@@ -108,11 +121,16 @@ async function readDataJson(env) {
 async function writeDataJson(env, payload) {
   const { owner, repo, branch, dataPath } = getRepoConfig(env);
   const records = Array.isArray(payload.records) ? payload.records : [];
+  const incomingSync = payload && payload.sync && typeof payload.sync === 'object' ? payload.sync : {};
   const nextPayload = {
     app: 'alipay-cashbook-dashboard',
-    version: 15,
+    version: 16,
     updatedAt: new Date().toISOString(),
-    sync: { provider: 'cloudflare-worker' },
+    sync: {
+      provider: 'cloudflare-worker',
+      workerUrl: incomingSync.workerUrl || '',
+      accessPassword: incomingSync.accessPassword || ''
+    },
     total: records.length,
     records
   };
@@ -154,6 +172,8 @@ export default {
     }
 
     try {
+      verifyAccessPassword(request, env);
+
       if (request.method === 'GET') {
         const payload = await readDataJson(env);
         delete payload.githubSha;
