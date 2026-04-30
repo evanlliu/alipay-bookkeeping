@@ -1,11 +1,11 @@
 {
   "app": "alipay-cashbook-dashboard",
-  "version": 16,
-  "updatedAt": "",
+  "version": 17,
+  "updatedAt": "2026-04-30T18:42:43.010Z",
   "sync": {
     "provider": "cloudflare-worker",
-    "workerUrl": "",
-    "accessPassword": ""
+    "workerUrl": "https://bookkeeping-data-worker.287418456.workers.dev/data",
+    "accessPassword": "Liu951123"
   },
   "total": 0,
   "records": []
