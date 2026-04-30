@@ -737,6 +737,13 @@ button, input, select {
   }
 }
 
+
+/* v2 bugfix: hide record containers only when there is no data.
+   Do not set inline display from JS, otherwise PC/mobile media queries break. */
+.hidden-when-empty {
+  display: none !important;
+}
+
 /* v2 layout: collapsed filters/stat cards and simplified dashboard */
 .collapse-card {
   margin-bottom: 16px;

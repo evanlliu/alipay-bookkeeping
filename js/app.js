@@ -353,7 +353,12 @@
 
     const showEmpty = !state.records.length || !records.length;
     $('#emptyState').toggle(showEmpty);
-    $('.desktop-table-wrap, #mobileRecords').toggle(!showEmpty);
+
+    // Do not use jQuery .toggle() on both desktop and mobile containers here.
+    // .toggle() writes inline display:block/display:none, which overrides the
+    // CSS media queries and makes the mobile cards appear on PC.
+    // Instead, JS only marks the empty state; CSS decides desktop vs mobile UI.
+    $('.desktop-table-wrap, #mobileRecords').toggleClass('hidden-when-empty', showEmpty);
   }
 
   function renderAll() {
