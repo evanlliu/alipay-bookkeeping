@@ -12,10 +12,7 @@
     search: '',
     sortKey: 'time',
     sortDir: 'desc',
-    githubOwner: '',
-    githubRepo: '',
-    githubBranch: 'main',
-    githubToken: ''
+    workerUrl: ''
   };
 
   const typeZh = {
@@ -83,152 +80,94 @@
     });
   }
 
-  function detectGitHubPagesConfig() {
-    const host = window.location.hostname || '';
-    const pathParts = window.location.pathname.split('/').filter(Boolean);
-    const config = { owner: '', repo: '', branch: 'main' };
-
-    if (host.endsWith('.github.io')) {
-      config.owner = host.replace('.github.io', '');
-      config.repo = pathParts[0] || '';
-    }
-
-    return config;
+  function normalizeWorkerUrl(url) {
+    return String(url || '').trim().replace(/\/+$/, '');
   }
 
-  function loadGithubSettings() {
+  function loadWorkerSettings() {
     const settings = CashbookStorage.loadSettings();
-    const detected = detectGitHubPagesConfig();
-    state.githubOwner = settings.githubOwner || detected.owner || 'evanlliu';
-    state.githubRepo = settings.githubRepo || detected.repo || 'alipay-bookkeeping';
-    state.githubBranch = settings.githubBranch || detected.branch || 'main';
-    state.githubToken = localStorage.getItem('alipay_cashbook_github_token') || sessionStorage.getItem('alipay_cashbook_github_token') || '';
+    const config = window.CASHBOOK_SYNC_CONFIG || {};
+    state.workerUrl = normalizeWorkerUrl(
+      config.workerUrl ||
+      settings.workerUrl ||
+      localStorage.getItem('alipay_cashbook_worker_url') ||
+      ''
+    );
   }
 
-  function syncGithubForm() {
-    $('#githubOwner').val(state.githubOwner || '');
-    $('#githubRepo').val(state.githubRepo || '');
-    $('#githubBranch').val(state.githubBranch || 'main');
-    $('#githubToken').val(state.githubToken || '');
+  function syncWorkerForm() {
+    $('#workerUrl').val(state.workerUrl || '');
   }
 
-  function applyGithubConfigFromDataJson(payload) {
-    const github = (payload && (payload.github || payload.sync || payload.githubSync)) || {};
-    const owner = github.owner || github.githubOwner || payload.githubOwner || '';
-    const repo = github.repo || github.repository || github.githubRepo || payload.githubRepo || '';
-    const branch = github.branch || github.githubBranch || payload.githubBranch || '';
-    const token = github.token || github.githubToken || payload.githubToken || '';
-
-    if (owner) state.githubOwner = String(owner).trim();
-    if (repo) state.githubRepo = String(repo).trim();
-    if (branch) state.githubBranch = String(branch).trim() || 'main';
-    if (token) {
-      state.githubToken = String(token).trim();
-      localStorage.setItem('alipay_cashbook_github_token', state.githubToken);
-      sessionStorage.setItem('alipay_cashbook_github_token', state.githubToken);
-    }
-
-    saveSettings();
-    syncGithubForm();
-  }
-
-  function readGithubForm() {
-    state.githubOwner = String($('#githubOwner').val() || '').trim();
-    state.githubRepo = String($('#githubRepo').val() || '').trim();
-    state.githubBranch = String($('#githubBranch').val() || 'main').trim() || 'main';
-    state.githubToken = String($('#githubToken').val() || '').trim();
-    if (state.githubToken) {
-      localStorage.setItem('alipay_cashbook_github_token', state.githubToken);
-      sessionStorage.setItem('alipay_cashbook_github_token', state.githubToken);
+  function readWorkerForm() {
+    state.workerUrl = normalizeWorkerUrl($('#workerUrl').val());
+    if (state.workerUrl) {
+      localStorage.setItem('alipay_cashbook_worker_url', state.workerUrl);
     }
   }
 
-  function validateGithubConfig() {
-    readGithubForm();
-    if (!state.githubOwner || !state.githubRepo || !state.githubBranch) {
-      $('#githubSyncCard').prop('open', true);
-      setImportMessage(t('githubConfigRequired'), 'error');
-      return false;
-    }
-    if (!state.githubToken) {
-      $('#githubSyncCard').prop('open', true);
-      setImportMessage(t('githubTokenRequired'), 'error');
+  function validateWorkerConfig() {
+    readWorkerForm();
+    if (!state.workerUrl) {
+      $('#workerSyncCard').prop('open', true);
+      setImportMessage(t('workerConfigRequired'), 'error');
       return false;
     }
     saveSettings();
     return true;
   }
 
-  function utf8ToBase64(text) {
-    const bytes = new TextEncoder().encode(text);
-    let binary = '';
-    const chunkSize = 0x8000;
-    for (let i = 0; i < bytes.length; i += chunkSize) {
-      const chunk = bytes.subarray(i, i + chunkSize);
-      binary += String.fromCharCode.apply(null, chunk);
-    }
-    return btoa(binary);
-  }
+  async function workerApi(method = 'GET', payload) {
+    const url = normalizeWorkerUrl(state.workerUrl);
+    if (!url) throw new Error(t('workerConfigRequired'));
 
-  async function githubApi(path, options = {}) {
-    const response = await fetch(`https://api.github.com${path}`, {
-      ...options,
+    const options = {
+      method,
       headers: {
-        Accept: 'application/vnd.github+json',
-        'X-GitHub-Api-Version': '2022-11-28',
-        Authorization: `Bearer ${state.githubToken}`,
-        ...(options.headers || {})
-      }
-    });
+        'Accept': 'application/json'
+      },
+      cache: 'no-store'
+    };
 
-    let body = null;
+    if (payload !== undefined) {
+      options.headers['Content-Type'] = 'application/json;charset=utf-8';
+      options.body = JSON.stringify(payload);
+    }
+
+    const response = await fetch(url, options);
     const text = await response.text();
+    let body = null;
     if (text) {
       try { body = JSON.parse(text); } catch (e) { body = { message: text }; }
     }
 
     if (!response.ok) {
-      const err = new Error((body && body.message) || `GitHub API ${response.status}`);
+      const err = new Error((body && (body.message || body.error)) || `Worker HTTP ${response.status}`);
       err.status = response.status;
       err.body = body;
       throw err;
     }
 
-    return body;
+    return body || {};
   }
 
-  async function getDataJsonSha() {
-    try {
-      const encodedPath = encodeURIComponent('data.json');
-      const res = await githubApi(`/repos/${encodeURIComponent(state.githubOwner)}/${encodeURIComponent(state.githubRepo)}/contents/${encodedPath}?ref=${encodeURIComponent(state.githubBranch)}`);
-      return res && res.sha ? res.sha : '';
-    } catch (err) {
-      if (err.status === 404) return '';
-      throw err;
-    }
-  }
+  async function commitDataJsonViaWorker(records) {
+    if (!validateWorkerConfig()) return false;
 
-  async function commitDataJsonToGithub(records) {
-    if (!validateGithubConfig()) return false;
-
-    setImportMessage(t('githubUpdating'), 'success');
+    setImportMessage(t('workerUpdating'), 'success');
     const payload = buildDataJsonPayload(records);
-    const content = utf8ToBase64(JSON.stringify(payload, null, 2));
-    const sha = await getDataJsonSha();
-    const body = {
-      message: `Update data.json from cashbook dashboard ${new Date().toISOString()}`,
-      content,
-      branch: state.githubBranch
-    };
-    if (sha) body.sha = sha;
-
-    await githubApi(`/repos/${encodeURIComponent(state.githubOwner)}/${encodeURIComponent(state.githubRepo)}/contents/data.json`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
-
+    await workerApi('PUT', payload);
     return true;
+  }
+
+  async function fetchDataJsonPayload() {
+    if (state.workerUrl) {
+      return workerApi('GET');
+    }
+
+    const response = await fetch(`./data.json?_=${Date.now()}`, { cache: 'no-store' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
   }
 
   function sum(records, predicate) {
@@ -728,7 +667,7 @@
         ? imported
         : mergeRecords(state.records, imported);
 
-      const committed = await commitDataJsonToGithub(nextRecords);
+      const committed = await commitDataJsonViaWorker(nextRecords);
       if (!committed) return;
 
       state.records = nextRecords.sort((a, b) => String(b.time || '').localeCompare(String(a.time || '')));
@@ -742,7 +681,7 @@
       state.sortDir = 'desc';
       $('#searchInput').val('');
       renderAll();
-      setImportMessage(`${t('githubUpdateDone')} ${state.records.length} ${t('importedRows')}`, 'success');
+      setImportMessage(`${t('workerUpdateDone')} ${state.records.length} ${t('importedRows')}`, 'success');
     } catch (err) {
       console.error(err);
       const message = err.code === 'NO_TEMPLATE_HEADER' ? t('noTemplate') : (err.message || t('parseError'));
@@ -758,14 +697,8 @@
     const rows = Array.isArray(records) ? records : [];
     return {
       app: 'alipay-cashbook-dashboard',
-      version: 14,
+      version: 15,
       updatedAt: new Date().toISOString(),
-      github: {
-        owner: state.githubOwner || '',
-        repo: state.githubRepo || '',
-        branch: state.githubBranch || 'main',
-        token: state.githubToken || ''
-      },
       total: rows.length,
       records: rows
     };
@@ -808,18 +741,10 @@
     const silent = !!options.silent;
 
     try {
-      const response = await fetch(`./data.json?_=${Date.now()}`, { cache: 'no-store' });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-      const payload = await response.json();
-      applyGithubConfigFromDataJson(payload);
+      const payload = await fetchDataJsonPayload();
       const records = Array.isArray(payload.records) ? payload.records : [];
 
       if (!records.length) {
-        if (force) {
-          state.records = [];
-          renderAll();
-        }
         if (!silent) setImportMessage(t('dataJsonEmpty'), 'error');
         return false;
       }
@@ -906,9 +831,7 @@
       search: state.search,
       sortKey: state.sortKey,
       sortDir: state.sortDir,
-      githubOwner: state.githubOwner,
-      githubRepo: state.githubRepo,
-      githubBranch: state.githubBranch
+      workerUrl: state.workerUrl
     });
   }
 
@@ -916,18 +839,11 @@
     $('#importBtn').on('click', () => $('#fileInput').trigger('click'));
     $('#fileInput').on('change', (e) => handleImport(e.target.files[0]));
 
-    $('#saveGithubSettings').on('click', async function () {
-      readGithubForm();
+    $('#saveWorkerSettings').on('click', function () {
+      readWorkerForm();
       saveSettings();
-      try {
-        const committed = await commitDataJsonToGithub(state.records);
-        if (committed) {
-          setImportMessage(t('githubSettingsSavedToDataJson'), 'success');
-        }
-      } catch (err) {
-        console.error(err);
-        setImportMessage(`${t('githubUpdateFailed')}：${err.message || t('parseError')}`, 'error');
-      }
+      setImportMessage(t('workerSettingsSaved'), 'success');
+      loadDataJson({ silent: false, force: true });
     });
 
     $('#langSelect').on('change', function () {
@@ -1049,13 +965,13 @@
 
   async function init() {
     loadSettings();
-    loadGithubSettings();
+    loadWorkerSettings();
     CashbookStorage.clearRecords();
     state.records = [];
     $('#langSelect').val(state.lang);
     $('#viewMode').val(state.viewMode);
     $('#searchInput').val(state.search);
-    syncGithubForm();
+    syncWorkerForm();
     bindEvents();
     renderAll();
     await loadDataJson({ silent: false, force: true });

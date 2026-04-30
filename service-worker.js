@@ -1,8 +1,9 @@
-const CACHE_NAME = 'cashbook-dashboard-v14-token-in-data-json-20260430';
+const CACHE_NAME = 'cashbook-dashboard-v15-cloudflare-worker-20260430';
 const ASSETS = [
   './',
   './index.html',
   './css/style.css',
+  './js/sync-config.js',
   './js/i18n.js',
   './js/storage.js',
   './js/import.js',

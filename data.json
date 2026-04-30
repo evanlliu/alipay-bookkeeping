@@ -1,12 +1,9 @@
 {
   "app": "alipay-cashbook-dashboard",
-  "version": 14,
+  "version": 15,
   "updatedAt": "",
-  "github": {
-    "owner": "evanlliu",
-    "repo": "alipay-bookkeeping",
-    "branch": "main",
-    "token": ""
+  "sync": {
+    "provider": "cloudflare-worker"
   },
   "total": 0,
   "records": []
