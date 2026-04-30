@@ -869,3 +869,34 @@ button, input, select {
     grid-template-columns: 1fr;
   }
 }
+
+/* v2 pc/mobile display hard fix
+   This block intentionally uses !important because older cached JS may write
+   inline display:block on #mobileRecords. The CSS below must still win. */
+@media (min-width: 721px) {
+  .records-panel .desktop-table-wrap {
+    display: block !important;
+  }
+
+  .records-panel #mobileRecords,
+  .records-panel .mobile-records {
+    display: none !important;
+  }
+}
+
+@media (max-width: 720px) {
+  .records-panel .desktop-table-wrap {
+    display: none !important;
+  }
+
+  .records-panel #mobileRecords,
+  .records-panel .mobile-records {
+    display: block !important;
+  }
+}
+
+.records-panel .desktop-table-wrap.hidden-when-empty,
+.records-panel #mobileRecords.hidden-when-empty,
+.records-panel .mobile-records.hidden-when-empty {
+  display: none !important;
+}

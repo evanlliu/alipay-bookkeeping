@@ -112,3 +112,8 @@ cashbook-dashboard/
 ## V2 Bugfix
 
 本版本基于 `alipay_cashbook_dashboard_v2_github` 修复：PC 端不再显示移动端明细卡片，移动端不再显示 PC 表格。修复原因是旧版 JS 使用 `.toggle()` 给移动端容器写入了内联 `display:block`，覆盖了 CSS 媒体查询。
+
+
+## V2 PC/移动端显示修复
+
+本版本基于 V2，只修复明细区域显示问题：PC 端只显示表格，移动端只显示卡片，避免两个版本同时出现。
