@@ -22,12 +22,21 @@
           <p data-i18n="appSubtitle">本地导入 · 自动翻译 · 月度/年度支出分析</p>
         </div>
       </div>
-      <div class="top-actions">
-        <select id="langSelect" class="select small" aria-label="Language">
-          <option value="zh">中文</option>
-          <option value="en">English</option>
-          <option value="tr">Türkçe</option>
-        </select>
+      <div class="top-actions floating-language" id="floatingLanguage" aria-label="Language switcher">
+        <button id="langToggle" class="lang-toggle" type="button" aria-expanded="false" aria-controls="langPanel" title="Language">
+          <span class="lang-toggle-icon">🌐</span>
+          <span id="langCurrent" class="lang-current">中文</span>
+        </button>
+        <div id="langPanel" class="lang-panel" hidden>
+          <button class="lang-option" type="button" data-lang="zh">中文</button>
+          <button class="lang-option" type="button" data-lang="en">English</button>
+          <button class="lang-option" type="button" data-lang="tr">Türkçe</button>
+          <select id="langSelect" class="select small language-select" aria-label="Language" hidden>
+            <option value="zh">中文</option>
+            <option value="en">English</option>
+            <option value="tr">Türkçe</option>
+          </select>
+        </div>
       </div>
     </header>
 
@@ -44,6 +53,11 @@
                 <input id="replaceExisting" type="checkbox" checked />
                 <span data-i18n="replaceExisting">导入时覆盖现有数据</span>
               </label>
+            </div>
+            <div class="sync-actions" aria-label="data.json sync actions">
+              <button id="downloadDataJsonBtn" class="btn ghost small-btn" type="button" data-i18n="downloadDataJson">生成 data.json</button>
+              <button id="loadDataJsonBtn" class="btn ghost small-btn" type="button" data-i18n="loadDataJson">读取 data.json</button>
+              <small data-i18n="dataJsonHint">下载后上传覆盖 GitHub 仓库根目录的 data.json，多设备即可读取同一份数据。</small>
             </div>
           </div>
         </div>
@@ -155,6 +169,7 @@
           <h3 data-i18n="records">明细记录</h3>
           <small id="recordSummary"></small>
         </div>
+        <div id="activeFilterBar" class="active-filter-bar" hidden></div>
 
         <div id="mobileSortPanel" class="mobile-sort-panel">
           <div class="mobile-sort-head">

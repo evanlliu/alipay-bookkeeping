@@ -1,7 +1,8 @@
-const CACHE_NAME = 'cashbook-dashboard-v6-mobile-sort-20260430';
+const CACHE_NAME = 'cashbook-dashboard-v10-data-json-20260430';
 const ASSETS = [
   './',
   './index.html',
+  './data.json',
   './css/style.css',
   './js/i18n.js',
   './js/storage.js',

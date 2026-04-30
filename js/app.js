@@ -53,6 +53,32 @@
     return `${n} ${t('countSuffix')}`;
   }
 
+  function languageShortLabel(lang) {
+    if (lang === 'en') return 'EN';
+    if (lang === 'tr') return 'TR';
+    return '中';
+  }
+
+  function languageFullLabel(lang) {
+    if (lang === 'en') return 'English';
+    if (lang === 'tr') return 'Türkçe';
+    return '中文';
+  }
+
+  function setLanguagePanel(open) {
+    $('#langPanel').prop('hidden', !open);
+    $('#langToggle').attr('aria-expanded', open ? 'true' : 'false');
+  }
+
+  function updateLanguageSwitcher() {
+    $('#langCurrent').text(languageShortLabel(state.lang));
+    $('#langToggle').attr('title', languageFullLabel(state.lang));
+    $('.lang-option').each(function () {
+      const active = $(this).data('lang') === state.lang;
+      $(this).toggleClass('active', active).attr('aria-current', active ? 'true' : 'false');
+    });
+  }
+
   function sum(records, predicate) {
     return records.reduce((total, record) => predicate(record) ? total + record.amount : total, 0);
   }
@@ -212,6 +238,27 @@
       .sort((a, b) => b.amount - a.amount);
   }
 
+  function normalizeTagFilterValue(value) {
+    return value === '-' ? '' : String(value ?? '');
+  }
+
+  function filterLabel(kind, value) {
+    if (kind === 'category') return CashbookI18N.translateValue('category', value, state.lang);
+    if (kind === 'tag') return value || '-';
+    return value || '-';
+  }
+
+  function activeBreakdownFilters() {
+    const parts = [];
+    if (state.category !== 'ALL') {
+      parts.push(`${t('category')}：${filterLabel('category', state.category)}`);
+    }
+    if (state.tag !== 'ALL') {
+      parts.push(`${t('tag')}：${filterLabel('tag', state.tag)}`);
+    }
+    return parts;
+  }
+
   function updateTexts() {
     document.documentElement.lang = state.lang === 'zh' ? 'zh-CN' : state.lang === 'tr' ? 'tr-TR' : 'en';
     $('[data-i18n]').each(function () {
@@ -222,6 +269,7 @@
     $('#viewMode option[value="month"]').text(t('byMonth'));
     $('#viewMode option[value="year"]').text(t('byYear'));
     $('#viewMode option[value="all"]').text(t('allData'));
+    updateLanguageSwitcher();
   }
 
   function rebuildFilterOptions() {
@@ -337,7 +385,8 @@
     });
   }
 
-  function renderRankList(selector, items, total, valueLabelFn) {
+  function renderRankList(selector, items, total, valueLabelFn, options) {
+    const opts = options || {};
     const $el = $(selector).empty();
     if (!items.length || total <= 0) {
       $el.append(`<div class="empty-mini">${escapeHtml(t('noRows'))}</div>`);
@@ -346,11 +395,20 @@
     items.slice(0, 10).forEach((item) => {
       const percent = total ? (item.amount / total) * 100 : 0;
       const label = valueLabelFn ? valueLabelFn(item.key) : item.key;
+      const filterType = opts.filterType || '';
+      const filterValue = filterType === 'tag' ? normalizeTagFilterValue(item.key) : String(item.key ?? '');
+      const active = (filterType === 'category' && state.category === filterValue) ||
+        (filterType === 'tag' && state.tag === filterValue);
+      const clickableAttrs = filterType
+        ? ` role="button" tabindex="0" data-filter-type="${escapeAttr(filterType)}" data-filter-value="${escapeAttr(filterValue)}" title="${escapeAttr(t('clickViewDetails'))}"`
+        : '';
+      const activeBadge = active ? `<small class="active-filter-badge">${escapeHtml(t('activeFilter'))}</small>` : '';
       $el.append(`
-        <div class="rank-row">
+        <div class="rank-row ${filterType ? 'rank-row-clickable' : ''} ${active ? 'active' : ''}"${clickableAttrs}>
           <div class="rank-name">
             <b title="${escapeAttr(label)}">${escapeHtml(label)}</b>
             <small>${percent.toFixed(1)}%</small>
+            ${activeBadge}
           </div>
           <div class="rank-amount">${escapeHtml(formatMoney(item.amount))}</div>
           <div class="progress"><span style="width:${Math.max(2, percent)}%"></span></div>
@@ -365,8 +423,8 @@
     const byCategory = groupSum(expenses, (r) => rawValue(r, 'category'));
     const byTag = groupSum(expenses, (r) => r.tag || '-');
     $('#categoryTotal').text(formatMoney(total));
-    renderRankList('#categoryChart', byCategory, total, (key) => CashbookI18N.translateValue('category', key, state.lang));
-    renderRankList('#tagChart', byTag, total, (key) => key || '-');
+    renderRankList('#categoryChart', byCategory, total, (key) => CashbookI18N.translateValue('category', key, state.lang), { filterType: 'category' });
+    renderRankList('#tagChart', byTag, total, (key) => key || '-', { filterType: 'tag' });
   }
 
   function renderTopExpenses(records) {
@@ -450,6 +508,27 @@
     $('#mobileSortPanel').toggleClass('hidden-when-empty', showEmpty);
   }
 
+  function renderActiveFilterBar() {
+    const parts = activeBreakdownFilters();
+    const $bar = $('#activeFilterBar');
+    if (!parts.length) {
+      $bar.empty().attr('hidden', 'hidden');
+      return;
+    }
+
+    $bar.removeAttr('hidden').html(`
+      <span class="active-filter-text">${escapeHtml(t('detailsFilteredBy'))}</span>
+      <strong>${escapeHtml(parts.join(' / '))}</strong>
+      <button type="button" id="clearBreakdownFilter" class="clear-filter-btn">${escapeHtml(t('clearFilter'))}</button>
+    `);
+  }
+
+  function jumpToRecords() {
+    const target = document.querySelector('.records-panel');
+    if (!target) return;
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
   function renderAll() {
     updateTexts();
     rebuildFilterOptions();
@@ -457,6 +536,7 @@
     renderSummary(records);
     renderBreakdowns(records);
     renderTopExpenses(records);
+    renderActiveFilterBar();
     renderRecords(records);
     saveSettings();
   }
@@ -517,6 +597,82 @@
 
   function setImportMessage(text, type) {
     $('#importMessage').removeClass('success error').addClass(type || '').text(text || '');
+  }
+
+  function buildDataJsonPayload() {
+    return {
+      app: 'alipay-cashbook-dashboard',
+      version: 10,
+      updatedAt: new Date().toISOString(),
+      total: state.records.length,
+      records: state.records
+    };
+  }
+
+  function downloadDataJson() {
+    if (!state.records.length) {
+      setImportMessage(t('noDataToBackup'), 'error');
+      return;
+    }
+
+    const payload = buildDataJsonPayload();
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'data.json';
+    a.click();
+    URL.revokeObjectURL(url);
+    setImportMessage(t('dataJsonDownloaded'), 'success');
+  }
+
+  function applyDataJsonPayload(payload) {
+    const records = Array.isArray(payload.records) ? payload.records : [];
+    state.records = records.sort((a, b) => String(b.time || '').localeCompare(String(a.time || '')));
+    CashbookStorage.saveRecords(state.records);
+    state.selectedMonth = '';
+    state.selectedYear = '';
+    state.category = 'ALL';
+    state.type = 'ALL';
+    state.tag = 'ALL';
+    state.search = '';
+    state.sortKey = 'time';
+    state.sortDir = 'desc';
+    $('#searchInput').val('');
+    renderAll();
+  }
+
+  async function loadDataJson(options = {}) {
+    const force = !!options.force;
+    const silent = !!options.silent;
+
+    try {
+      const response = await fetch(`./data.json?_=${Date.now()}`, { cache: 'no-store' });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+      const payload = await response.json();
+      const records = Array.isArray(payload.records) ? payload.records : [];
+
+      if (!records.length) {
+        if (!silent) setImportMessage(t('dataJsonEmpty'), 'error');
+        return false;
+      }
+
+      if (force || !state.records.length) {
+        applyDataJsonPayload(payload);
+        setImportMessage(`${t('dataJsonLoaded')} ${records.length} ${t('importedRows')}`, 'success');
+        return true;
+      }
+
+      if (!silent) {
+        setImportMessage(`${t('dataJsonFound')}：${records.length} ${t('importedRows')}`, 'success');
+      }
+      return false;
+    } catch (err) {
+      console.warn('Failed to load data.json', err);
+      if (!silent) setImportMessage(t('dataJsonLoadFailed'), 'error');
+      return false;
+    }
   }
 
   function exportBackup() {
@@ -590,10 +746,36 @@
   function bindEvents() {
     $('#importBtn').on('click', () => $('#fileInput').trigger('click'));
     $('#fileInput').on('change', (e) => handleImport(e.target.files[0]));
+    $('#downloadDataJsonBtn').on('click', downloadDataJson);
+    $('#loadDataJsonBtn').on('click', () => loadDataJson({ force: true }));
 
     $('#langSelect').on('change', function () {
       state.lang = this.value;
       renderAll();
+      setLanguagePanel(false);
+    });
+
+    $('#langToggle').on('click', function (e) {
+      e.stopPropagation();
+      const isOpen = !$('#langPanel').prop('hidden');
+      setLanguagePanel(!isOpen);
+    });
+
+    $('#langPanel').on('click', function (e) {
+      e.stopPropagation();
+    });
+
+    $('.lang-option').on('click', function () {
+      const nextLang = $(this).data('lang');
+      if (!nextLang) return;
+      state.lang = nextLang;
+      $('#langSelect').val(nextLang);
+      renderAll();
+      setLanguagePanel(false);
+    });
+
+    $(document).on('click', function () {
+      setLanguagePanel(false);
     });
 
     $('#viewMode').on('change', function () {
@@ -628,6 +810,30 @@
 
     $('#searchInput').on('input', function () {
       state.search = this.value;
+      renderAll();
+    });
+
+    $(document).on('click keydown', '.rank-row-clickable', function (event) {
+      if (event.type === 'keydown' && event.key !== 'Enter' && event.key !== ' ') return;
+      event.preventDefault();
+      const filterType = $(this).data('filter-type');
+      const filterValue = String($(this).data('filter-value') ?? '');
+
+      if (filterType === 'category') {
+        state.category = state.category === filterValue ? 'ALL' : filterValue;
+      }
+
+      if (filterType === 'tag') {
+        state.tag = state.tag === filterValue ? 'ALL' : filterValue;
+      }
+
+      renderAll();
+      jumpToRecords();
+    });
+
+    $(document).on('click', '#clearBreakdownFilter', function () {
+      state.category = 'ALL';
+      state.tag = 'ALL';
       renderAll();
     });
 
@@ -668,6 +874,7 @@
     $('#searchInput').val(state.search);
     bindEvents();
     renderAll();
+    loadDataJson({ silent: true, force: false });
 
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('./service-worker.js').catch(() => {});
