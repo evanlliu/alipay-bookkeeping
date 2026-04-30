@@ -1,8 +1,7 @@
-const CACHE_NAME = 'cashbook-dashboard-v10-data-json-20260430';
+const CACHE_NAME = 'cashbook-dashboard-v11-auto-data-json-20260430';
 const ASSETS = [
   './',
   './index.html',
-  './data.json',
   './css/style.css',
   './js/i18n.js',
   './js/storage.js',
@@ -27,6 +26,13 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
+
+  const url = new URL(event.request.url);
+  if (url.pathname.endsWith('/data.json')) {
+    event.respondWith(fetch(event.request, { cache: 'no-store' }));
+    return;
+  }
+
   event.respondWith(
     fetch(event.request)
       .then((response) => {

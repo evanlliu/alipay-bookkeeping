@@ -588,6 +588,7 @@
       $('#searchInput').val('');
       renderAll();
       setImportMessage(`${t('imported')} ${imported.length} ${t('importedRows')}`, 'success');
+      autoDownloadDataJson();
     } catch (err) {
       console.error(err);
       const message = err.code === 'NO_TEMPLATE_HEADER' ? t('noTemplate') : t('parseError');
@@ -602,14 +603,14 @@
   function buildDataJsonPayload() {
     return {
       app: 'alipay-cashbook-dashboard',
-      version: 10,
+      version: 11,
       updatedAt: new Date().toISOString(),
       total: state.records.length,
       records: state.records
     };
   }
 
-  function downloadDataJson() {
+  function autoDownloadDataJson() {
     if (!state.records.length) {
       setImportMessage(t('noDataToBackup'), 'error');
       return;
@@ -623,7 +624,7 @@
     a.download = 'data.json';
     a.click();
     URL.revokeObjectURL(url);
-    setImportMessage(t('dataJsonDownloaded'), 'success');
+    setImportMessage(t('dataJsonAutoDownloaded'), 'success');
   }
 
   function applyDataJsonPayload(payload) {
@@ -660,7 +661,7 @@
 
       if (force || !state.records.length) {
         applyDataJsonPayload(payload);
-        setImportMessage(`${t('dataJsonLoaded')} ${records.length} ${t('importedRows')}`, 'success');
+        if (!silent) setImportMessage(`${t('dataJsonLoaded')} ${records.length} ${t('importedRows')}`, 'success');
         return true;
       }
 
@@ -746,8 +747,6 @@
   function bindEvents() {
     $('#importBtn').on('click', () => $('#fileInput').trigger('click'));
     $('#fileInput').on('change', (e) => handleImport(e.target.files[0]));
-    $('#downloadDataJsonBtn').on('click', downloadDataJson);
-    $('#loadDataJsonBtn').on('click', () => loadDataJson({ force: true }));
 
     $('#langSelect').on('change', function () {
       state.lang = this.value;
@@ -874,7 +873,7 @@
     $('#searchInput').val(state.search);
     bindEvents();
     renderAll();
-    loadDataJson({ silent: true, force: false });
+    loadDataJson({ silent: true, force: true });
 
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('./service-worker.js').catch(() => {});

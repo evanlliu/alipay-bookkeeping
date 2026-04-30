@@ -1,29 +1,25 @@
-# 支付宝记账本支出看板 V10
-
-## V10 更新
-
-- 项目根目录新增 `data.json`。
-- 页面打开时会自动读取 GitHub Pages 上的 `data.json`。
-- 如果本机没有本地数据，会自动用 `data.json` 里的记录生成看板。
-- 导入 CSV / Excel 后，可以点击“生成 data.json”下载新的 `data.json`。
-- 把下载的 `data.json` 上传覆盖到 GitHub 仓库根目录后，多台设备访问同一个 GitHub Pages 地址即可读取同一份数据。
-
-## data.json 多设备同步用法
-
-1. 在电脑端导入支付宝记账本 CSV / Excel。
-2. 点击“生成 data.json”。
-3. GitHub 仓库根目录上传并覆盖 `data.json`。
-4. 等 GitHub Pages 更新 1-2 分钟。
-5. 手机、电脑、平板打开同一个 GitHub Pages 地址。
-6. 没有本地数据的设备会自动读取 `data.json`；已有旧本地数据的设备可以点击“读取 data.json”强制同步。
-
-> 重要说明：GitHub Pages 是纯静态网站，浏览器不能直接把数据写回 GitHub 仓库文件。所以目前的同步方式是“下载 data.json → 上传覆盖到 GitHub”。如果以后要完全自动同步，需要再接 GitHub API、后端服务或数据库。
-
----
-
-# 支付宝记账本支出看板
+# 支付宝记账本支出看板 V11
 
 这是一个纯前端静态项目，可以直接部署到 GitHub Pages。
+
+## V11 更新
+
+- 去掉“生成 data.json”和“读取 data.json”按钮。
+- 页面打开时自动读取仓库根目录的 `data.json`。
+- 导入 CSV / Excel 后，立即更新当前页面和本机浏览器数据。
+- 导入完成后会自动下载一个新的 `data.json` 文件。
+- 把新的 `data.json` 上传覆盖到 GitHub 仓库根目录后，其他电脑/手机打开同一个 GitHub Pages 地址会自动读取这份数据。
+
+> 重要：纯 GitHub Pages 是静态网站，浏览器不能直接把数据写回 GitHub 仓库文件。网页不能真正“自动插入到仓库里的 data.json”。安全静态版只能自动生成/下载 `data.json`，你再上传覆盖。真正全自动写入需要 GitHub API + Token 或后端服务，但 Token 不能写死在前端代码里。
+
+## data.json 多设备同步流程
+
+1. 在电脑端打开网站。
+2. 导入支付宝记账本 CSV / Excel。
+3. 浏览器会自动下载新的 `data.json`。
+4. 上传并覆盖 GitHub 仓库根目录的 `data.json`。
+5. 等 GitHub Pages 更新 1-2 分钟。
+6. 手机、电脑、平板打开同一个 GitHub Pages 地址，会自动加载新的 `data.json`。
 
 ## 功能
 
@@ -42,7 +38,6 @@
 - 支持按月查看支出
 - 支持按年查看支出
 - 支持分类、收支类型、标签、搜索筛选
-- 支持本地备份和恢复
 - 支持 Safari 添加到主屏幕后以独立 App 形式打开
 
 ## 使用方法
@@ -66,13 +61,13 @@
 
 ## 重要说明
 
-这个项目没有后端服务器。你的记账数据默认保存在当前浏览器的 `localStorage` 里。
+这个项目没有后端服务器。你的记账数据会保存在当前浏览器的 `localStorage` 里，同时可以通过仓库根目录的 `data.json` 在多台设备上读取同一份数据。
 
-如果你希望多台设备共用同一份数据，可以使用 V10 的 `data.json` 同步方式：
+如果你希望多台设备共用同一份数据，可以使用 V11 的 `data.json` 同步方式：
 
-- 点击“生成 data.json”下载数据文件
+- 导入后自动下载 data.json
 - 把 `data.json` 上传覆盖到 GitHub 仓库根目录
-- 其他设备打开 GitHub Pages 后读取同一份 `data.json`
+- 其他设备打开 GitHub Pages 后自动读取同一份 `data.json`
 
 注意：纯 GitHub Pages 不能自动把浏览器里的新数据写回 GitHub 仓库，仍然需要手动上传覆盖 `data.json`。
 
