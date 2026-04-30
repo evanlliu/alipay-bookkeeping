@@ -60,6 +60,36 @@
         <div id="importMessage" class="import-message"></div>
       </section>
 
+
+      <details class="collapse-card github-sync-card" id="githubSyncCard">
+        <summary>
+          <span data-i18n="githubSyncSettings">GitHub 同步</span>
+          <small data-i18n="githubSyncHint">首次填一次 Token，之后导入自动覆盖 data.json</small>
+        </summary>
+        <div class="github-sync-grid">
+          <label>
+            <span data-i18n="githubOwner">Owner</span>
+            <input id="githubOwner" class="input" type="text" placeholder="evanlliu" autocomplete="off" />
+          </label>
+          <label>
+            <span data-i18n="githubRepo">Repository</span>
+            <input id="githubRepo" class="input" type="text" placeholder="alipay-bookkeeping" autocomplete="off" />
+          </label>
+          <label>
+            <span data-i18n="githubBranch">Branch</span>
+            <input id="githubBranch" class="input" type="text" placeholder="main" autocomplete="off" />
+          </label>
+          <label class="github-token-field">
+            <span data-i18n="githubToken">GitHub Token</span>
+            <input id="githubToken" class="input" type="password" placeholder="粘贴 GitHub Token，保存一次即可" autocomplete="off" />
+          </label>
+          <div class="github-sync-actions">
+            <button id="saveGithubSettings" class="btn primary" type="button" data-i18n="saveGithubSettings">保存同步设置</button>
+            <small data-i18n="githubTokenSecurity">本机浏览器会记住 Token，以后导入会自动覆盖 data.json。</small>
+          </div>
+        </div>
+      </details>
+
       <details class="collapse-card filters-collapse">
         <summary>
           <span data-i18n="filterPanel">查询筛选</span>

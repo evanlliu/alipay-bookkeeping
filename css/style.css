@@ -1255,3 +1255,49 @@ button, input, select {
     width: 142px;
   }
 }
+
+/* v12 GitHub data.json sync settings */
+.github-sync-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(120px, 1fr));
+  gap: 12px;
+  padding: 0 16px 16px;
+}
+
+.github-sync-grid label span {
+  display: block;
+  margin-bottom: 7px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.github-token-field {
+  grid-column: span 3;
+}
+
+.github-sync-actions {
+  grid-column: span 3;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.github-sync-actions small {
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+@media (max-width: 720px) {
+  .github-sync-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .github-token-field,
+  .github-sync-actions {
+    grid-column: span 1;
+  }
+  .github-sync-actions .btn {
+    width: 100%;
+  }
+}
