@@ -9,7 +9,9 @@
     category: 'ALL',
     type: 'ALL',
     tag: 'ALL',
-    search: ''
+    search: '',
+    sortKey: 'time',
+    sortDir: 'desc'
   };
 
   const typeZh = {
@@ -68,6 +70,90 @@
     return uniqueSorted(state.records, (r) => r.year).sort().reverse();
   }
 
+  function sortValue(record, key) {
+    switch (key) {
+      case 'time':
+        return record.time || '';
+      case 'category':
+        return localValue(record, 'category');
+      case 'type':
+        return localValue(record, 'type');
+      case 'amount':
+        return Number(record.amount) || 0;
+      case 'note':
+        return localValue(record, 'note');
+      case 'account':
+        return localValue(record, 'account');
+      case 'source':
+        return localValue(record, 'source');
+      case 'tag':
+        return record.tag || '';
+      default:
+        return record.time || '';
+    }
+  }
+
+  function sortRecords(records) {
+    const dir = state.sortDir === 'asc' ? 1 : -1;
+    const key = state.sortKey || 'time';
+    const collator = new Intl.Collator(state.lang === 'zh' ? 'zh-Hans-CN' : state.lang === 'tr' ? 'tr-TR' : 'en-US', {
+      numeric: true,
+      sensitivity: 'base'
+    });
+
+    return records.slice().sort((a, b) => {
+      const av = sortValue(a, key);
+      const bv = sortValue(b, key);
+
+      if (key === 'amount') {
+        const diff = av - bv;
+        if (diff !== 0) return diff * dir;
+        return String(b.time || '').localeCompare(String(a.time || ''));
+      }
+
+      const result = collator.compare(String(av ?? ''), String(bv ?? ''));
+      if (result !== 0) return result * dir;
+      return String(b.time || '').localeCompare(String(a.time || ''));
+    });
+  }
+
+  function sortKeyLabel(key) {
+    switch (key) {
+      case 'time':
+        return t('date');
+      case 'category':
+        return t('category');
+      case 'type':
+        return t('type');
+      case 'amount':
+        return t('amount');
+      case 'note':
+        return t('note');
+      case 'account':
+        return t('account');
+      case 'source':
+        return t('source');
+      case 'tag':
+        return t('tag');
+      default:
+        return t('date');
+    }
+  }
+
+  function renderSortIndicators() {
+    $('.sort-btn, .mobile-sort-btn').each(function () {
+      const key = $(this).data('sort-key');
+      const active = key === state.sortKey;
+      $(this)
+        .toggleClass('active', active)
+        .attr('aria-sort', active ? (state.sortDir === 'asc' ? 'ascending' : 'descending') : 'none');
+      $(this).find('.sort-arrow').text(active ? (state.sortDir === 'asc' ? '↑' : '↓') : '↕');
+    });
+
+    const dirLabel = state.sortDir === 'asc' ? t('sortAsc') : t('sortDesc');
+    $('#mobileSortStatus').text(`${sortKeyLabel(state.sortKey)} · ${dirLabel}`);
+  }
+
   function currentScopeRecords() {
     let records = state.records.slice();
 
@@ -108,7 +194,7 @@
       });
     }
 
-    return records;
+    return sortRecords(records);
   }
 
   function expenseRecords(records) {
@@ -309,6 +395,7 @@
     const $tbody = $('#recordsTableBody').empty();
     const $mobile = $('#mobileRecords').empty();
     $('#recordSummary').text(countText(records.length));
+    renderSortIndicators();
 
     records.forEach((record) => {
       const rawType = rawValue(record, 'type');
@@ -360,6 +447,7 @@
     // JS only marks the empty state.
     $('.desktop-table-wrap').toggleClass('hidden-when-empty', showEmpty);
     $('#mobileRecords').toggleClass('hidden-when-empty', showEmpty);
+    $('#mobileSortPanel').toggleClass('hidden-when-empty', showEmpty);
   }
 
   function renderAll() {
@@ -415,6 +503,8 @@
       state.type = 'ALL';
       state.tag = 'ALL';
       state.search = '';
+      state.sortKey = 'time';
+      state.sortDir = 'desc';
       $('#searchInput').val('');
       renderAll();
       setImportMessage(`${t('imported')} ${imported.length} ${t('importedRows')}`, 'success');
@@ -478,6 +568,8 @@
     state.type = settings.type || 'ALL';
     state.tag = settings.tag || 'ALL';
     state.search = settings.search || '';
+    state.sortKey = settings.sortKey || 'time';
+    state.sortDir = settings.sortDir || 'desc';
   }
 
   function saveSettings() {
@@ -489,7 +581,9 @@
       category: state.category,
       type: state.type,
       tag: state.tag,
-      search: state.search
+      search: state.search,
+      sortKey: state.sortKey,
+      sortDir: state.sortDir
     });
   }
 
@@ -534,6 +628,20 @@
 
     $('#searchInput').on('input', function () {
       state.search = this.value;
+      renderAll();
+    });
+
+    $(document).on('click', '.sort-btn, .mobile-sort-btn', function () {
+      const key = $(this).data('sort-key');
+      if (!key) return;
+
+      if (state.sortKey === key) {
+        state.sortDir = state.sortDir === 'asc' ? 'desc' : 'asc';
+      } else {
+        state.sortKey = key;
+        state.sortDir = key === 'time' ? 'desc' : 'asc';
+      }
+
       renderAll();
     });
 

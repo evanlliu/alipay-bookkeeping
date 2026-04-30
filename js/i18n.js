@@ -66,7 +66,10 @@
       latestMonth: '最新月份',
       latestYear: '最新年份',
       noRows: '当前筛选条件下没有记录',
-      searchPlaceholder: '备注 / 账户 / 标签'
+      searchPlaceholder: '备注 / 账户 / 标签',
+      sortBy: '排序',
+      sortAsc: '升序',
+      sortDesc: '降序'
     },
     en: {
       appTitle: 'Alipay Cashbook Expense Dashboard',
@@ -133,7 +136,10 @@
       latestMonth: 'Latest month',
       latestYear: 'Latest year',
       noRows: 'No records for current filters',
-      searchPlaceholder: 'Note / account / tag'
+      searchPlaceholder: 'Note / account / tag',
+      sortBy: 'Sort',
+      sortAsc: 'Ascending',
+      sortDesc: 'Descending'
     },
     tr: {
       appTitle: 'Alipay Harcama Panosu',
@@ -200,7 +206,10 @@
       latestMonth: 'Son ay',
       latestYear: 'Son yıl',
       noRows: 'Mevcut filtrelerde kayıt yok',
-      searchPlaceholder: 'Not / hesap / etiket'
+      searchPlaceholder: 'Not / hesap / etiket',
+      sortBy: 'Sırala',
+      sortAsc: 'Artan',
+      sortDesc: 'Azalan'
     }
   };
 

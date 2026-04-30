@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cashbook-dashboard-v2-pc-mobile-fix-20260430';
+const CACHE_NAME = 'cashbook-dashboard-v6-mobile-sort-20260430';
 const ASSETS = [
   './',
   './index.html',

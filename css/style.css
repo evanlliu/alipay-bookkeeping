@@ -522,6 +522,37 @@ button, input, select {
   backdrop-filter: blur(8px);
 }
 
+.sort-btn {
+  width: 100%;
+  border: 0;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+  font-weight: 700;
+  text-align: left;
+}
+
+.sort-btn:hover,
+.sort-btn.active {
+  color: var(--primary);
+}
+
+.sort-arrow {
+  min-width: 14px;
+  color: #94a3b8;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.sort-btn.active .sort-arrow {
+  color: var(--primary);
+}
+
 .records-table td {
   padding: 14px 12px;
   background: #fff;
@@ -569,6 +600,75 @@ button, input, select {
 .mobile-records {
   display: none;
   padding: 0 14px 18px;
+}
+
+.mobile-sort-panel {
+  display: none;
+  padding: 0 14px 12px;
+  border-top: 1px solid rgba(226, 232, 240, .72);
+}
+
+.mobile-sort-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 10px 0 9px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.mobile-sort-head span {
+  color: var(--text);
+  font-weight: 800;
+}
+
+.mobile-sort-head strong {
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.mobile-sort-scroll {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 2px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.mobile-sort-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.mobile-sort-btn {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 8px 11px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex: 0 0 auto;
+  color: #334155;
+  background: #fff;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+  box-shadow: 0 1px 0 rgba(15, 23, 42, .04);
+}
+
+.mobile-sort-btn.active {
+  color: var(--primary);
+  border-color: #bfdbfe;
+  background: #eff6ff;
+}
+
+.mobile-sort-btn .sort-arrow {
+  min-width: auto;
+  color: inherit;
 }
 
 .mobile-card {
@@ -879,7 +979,9 @@ button, input, select {
   }
 
   .records-panel #mobileRecords,
-  .records-panel .mobile-records {
+  .records-panel .mobile-records,
+  .records-panel #mobileSortPanel,
+  .records-panel .mobile-sort-panel {
     display: none !important;
   }
 }
@@ -890,7 +992,9 @@ button, input, select {
   }
 
   .records-panel #mobileRecords,
-  .records-panel .mobile-records {
+  .records-panel .mobile-records,
+  .records-panel #mobileSortPanel,
+  .records-panel .mobile-sort-panel {
     display: block !important;
   }
 }

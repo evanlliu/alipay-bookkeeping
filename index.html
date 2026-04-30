@@ -156,18 +156,35 @@
           <small id="recordSummary"></small>
         </div>
 
+        <div id="mobileSortPanel" class="mobile-sort-panel">
+          <div class="mobile-sort-head">
+            <span data-i18n="sortBy">排序</span>
+            <strong id="mobileSortStatus"></strong>
+          </div>
+          <div class="mobile-sort-scroll" role="group" aria-label="Mobile record sort">
+            <button type="button" class="mobile-sort-btn" data-sort-key="time"><span data-i18n="date">日期</span><span class="sort-arrow" aria-hidden="true"></span></button>
+            <button type="button" class="mobile-sort-btn" data-sort-key="category"><span data-i18n="category">分类</span><span class="sort-arrow" aria-hidden="true"></span></button>
+            <button type="button" class="mobile-sort-btn" data-sort-key="type"><span data-i18n="type">类型</span><span class="sort-arrow" aria-hidden="true"></span></button>
+            <button type="button" class="mobile-sort-btn" data-sort-key="amount"><span data-i18n="amount">金额</span><span class="sort-arrow" aria-hidden="true"></span></button>
+            <button type="button" class="mobile-sort-btn" data-sort-key="note"><span data-i18n="note">备注</span><span class="sort-arrow" aria-hidden="true"></span></button>
+            <button type="button" class="mobile-sort-btn" data-sort-key="account"><span data-i18n="account">账户</span><span class="sort-arrow" aria-hidden="true"></span></button>
+            <button type="button" class="mobile-sort-btn" data-sort-key="source"><span data-i18n="source">来源</span><span class="sort-arrow" aria-hidden="true"></span></button>
+            <button type="button" class="mobile-sort-btn" data-sort-key="tag"><span data-i18n="tag">标签</span><span class="sort-arrow" aria-hidden="true"></span></button>
+          </div>
+        </div>
+
         <div class="desktop-table-wrap">
           <table class="records-table">
             <thead>
               <tr>
-                <th data-i18n="date">日期</th>
-                <th data-i18n="category">分类</th>
-                <th data-i18n="type">类型</th>
-                <th data-i18n="amount">金额</th>
-                <th data-i18n="note">备注</th>
-                <th data-i18n="account">账户</th>
-                <th data-i18n="source">来源</th>
-                <th data-i18n="tag">标签</th>
+                <th><button type="button" class="sort-btn" data-sort-key="time"><span data-i18n="date">日期</span><span class="sort-arrow" aria-hidden="true"></span></button></th>
+                <th><button type="button" class="sort-btn" data-sort-key="category"><span data-i18n="category">分类</span><span class="sort-arrow" aria-hidden="true"></span></button></th>
+                <th><button type="button" class="sort-btn" data-sort-key="type"><span data-i18n="type">类型</span><span class="sort-arrow" aria-hidden="true"></span></button></th>
+                <th><button type="button" class="sort-btn" data-sort-key="amount"><span data-i18n="amount">金额</span><span class="sort-arrow" aria-hidden="true"></span></button></th>
+                <th><button type="button" class="sort-btn" data-sort-key="note"><span data-i18n="note">备注</span><span class="sort-arrow" aria-hidden="true"></span></button></th>
+                <th><button type="button" class="sort-btn" data-sort-key="account"><span data-i18n="account">账户</span><span class="sort-arrow" aria-hidden="true"></span></button></th>
+                <th><button type="button" class="sort-btn" data-sort-key="source"><span data-i18n="source">来源</span><span class="sort-arrow" aria-hidden="true"></span></button></th>
+                <th><button type="button" class="sort-btn" data-sort-key="tag"><span data-i18n="tag">标签</span><span class="sort-arrow" aria-hidden="true"></span></button></th>
               </tr>
             </thead>
             <tbody id="recordsTableBody"></tbody>
