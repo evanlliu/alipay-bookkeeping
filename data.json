@@ -1,7 +1,7 @@
 {
   "app": "alipay-cashbook-dashboard",
   "version": 17,
-  "updatedAt": "2026-04-30T18:56:11.815Z",
+  "updatedAt": "2026-04-30T18:56:24.510Z",
   "sync": {
     "provider": "cloudflare-worker",
     "workerUrl": "https://bookkeeping-data-worker.287418456.workers.dev/data",
