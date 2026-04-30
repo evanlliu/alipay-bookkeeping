@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#0f172a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Cashbook" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>支付宝记账本支出看板</title>
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="apple-touch-icon" href="./assets/icon-192.png" />
+  <link rel="stylesheet" href="./css/style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-icon">账</div>
+        <div>
+          <h1 data-i18n="appTitle">支付宝记账本支出看板</h1>
+          <p data-i18n="appSubtitle">本地导入 · 自动翻译 · 月度/年度支出分析</p>
+        </div>
+      </div>
+      <div class="top-actions">
+        <select id="langSelect" class="select small" aria-label="Language">
+          <option value="zh">中文</option>
+          <option value="en">English</option>
+          <option value="tr">Türkçe</option>
+        </select>
+        <button id="backupBtn" class="btn ghost" data-i18n="backup">备份</button>
+        <button id="restoreBtn" class="btn ghost" data-i18n="restore">恢复</button>
+        <button id="clearBtn" class="btn danger" data-i18n="clear">清空</button>
+        <input id="restoreInput" type="file" accept=".json" hidden />
+      </div>
+    </header>
+
+    <main>
+      <section class="upload-card" id="dropZone">
+        <div class="upload-main">
+          <div class="upload-icon">📥</div>
+          <div>
+            <h2 data-i18n="importTitle">导入支付宝记账本模板</h2>
+            <p data-i18n="importHint">支持 CSV / XLS / XLSX。按你上传的模板识别：记录时间、分类、收支类型、金额、备注、账户、来源、标签。</p>
+            <div class="upload-actions">
+              <button id="importBtn" class="btn primary" data-i18n="selectFile">选择文件导入</button>
+              <label class="checkline">
+                <input id="replaceExisting" type="checkbox" checked />
+                <span data-i18n="replaceExisting">导入时覆盖现有数据</span>
+              </label>
+            </div>
+          </div>
+        </div>
+        <input id="fileInput" type="file" accept=".csv,.xls,.xlsx" hidden />
+        <div id="importMessage" class="import-message"></div>
+      </section>
+
+      <section class="filters">
+        <div class="filter-grid">
+          <label>
+            <span data-i18n="viewMode">查看方式</span>
+            <select id="viewMode" class="select">
+              <option value="month" data-i18n="byMonth">按月</option>
+              <option value="year" data-i18n="byYear">按年</option>
+              <option value="all" data-i18n="allData">全部</option>
+            </select>
+          </label>
+          <label id="monthWrap">
+            <span data-i18n="month">月份</span>
+            <select id="monthSelect" class="select"></select>
+          </label>
+          <label id="yearWrap">
+            <span data-i18n="year">年份</span>
+            <select id="yearSelect" class="select"></select>
+          </label>
+          <label>
+            <span data-i18n="category">分类</span>
+            <select id="categoryFilter" class="select"></select>
+          </label>
+          <label>
+            <span data-i18n="type">收支类型</span>
+            <select id="typeFilter" class="select"></select>
+          </label>
+          <label>
+            <span data-i18n="tag">标签</span>
+            <select id="tagFilter" class="select"></select>
+          </label>
+          <label class="search-label">
+            <span data-i18n="search">搜索</span>
+            <input id="searchInput" class="input" type="search" placeholder="备注 / 账户 / 标签" />
+          </label>
+        </div>
+      </section>
+
+      <section class="summary-grid">
+        <article class="summary-card expense">
+          <span data-i18n="totalExpense">总支出</span>
+          <strong id="totalExpense">¥0.00</strong>
+          <em id="expenseCount">0</em>
+        </article>
+        <article class="summary-card income">
+          <span data-i18n="totalIncome">总收入</span>
+          <strong id="totalIncome">¥0.00</strong>
+          <em id="incomeCount">0</em>
+        </article>
+        <article class="summary-card neutral">
+          <span data-i18n="excluded">不计收支</span>
+          <strong id="totalExcluded">¥0.00</strong>
+          <em id="excludedCount">0</em>
+        </article>
+        <article class="summary-card net">
+          <span data-i18n="netCashflow">净现金流</span>
+          <strong id="netCashflow">¥0.00</strong>
+          <em id="recordCount">0</em>
+        </article>
+      </section>
+
+      <section class="dashboard-grid">
+        <article class="panel wide">
+          <div class="panel-title">
+            <h3 id="trendTitle" data-i18n="expenseTrend">支出趋势</h3>
+            <small id="scopeText"></small>
+          </div>
+          <div id="trendChart" class="bar-chart"></div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-title">
+            <h3 data-i18n="categoryBreakdown">分类支出</h3>
+            <small id="categoryTotal"></small>
+          </div>
+          <div id="categoryChart" class="rank-list"></div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-title">
+            <h3 data-i18n="tagBreakdown">标签支出</h3>
+            <small data-i18n="tagHint">看谁/什么花得最多</small>
+          </div>
+          <div id="tagChart" class="rank-list"></div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-title">
+            <h3 data-i18n="accountBreakdown">账户支出</h3>
+            <small data-i18n="accountHint">银行卡/余额来源</small>
+          </div>
+          <div id="accountChart" class="rank-list"></div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-title">
+            <h3 data-i18n="topExpenses">最大支出 TOP 10</h3>
+            <small data-i18n="topHint">按金额排序</small>
+          </div>
+          <div id="topExpensesList" class="top-list"></div>
+        </article>
+      </section>
+
+      <section class="panel records-panel">
+        <div class="panel-title sticky-title">
+          <h3 data-i18n="records">明细记录</h3>
+          <small id="recordSummary"></small>
+        </div>
+
+        <div class="desktop-table-wrap">
+          <table class="records-table">
+            <thead>
+              <tr>
+                <th data-i18n="date">日期</th>
+                <th data-i18n="category">分类</th>
+                <th data-i18n="type">类型</th>
+                <th data-i18n="amount">金额</th>
+                <th data-i18n="note">备注</th>
+                <th data-i18n="account">账户</th>
+                <th data-i18n="source">来源</th>
+                <th data-i18n="tag">标签</th>
+              </tr>
+            </thead>
+            <tbody id="recordsTableBody"></tbody>
+          </table>
+        </div>
+
+        <div id="mobileRecords" class="mobile-records"></div>
+        <div id="emptyState" class="empty-state">
+          <div>📊</div>
+          <h3 data-i18n="emptyTitle">还没有数据</h3>
+          <p data-i18n="emptyText">先导入支付宝记账本 CSV / Excel，然后这里会生成支出看板。</p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="./js/i18n.js"></script>
+  <script src="./js/storage.js"></script>
+  <script src="./js/import.js"></script>
+  <script src="./js/app.js"></script>
+</body>
+</html>
