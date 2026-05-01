@@ -369,6 +369,22 @@
     return records.filter((r) => rawValue(r, 'type') === typeZh.expense);
   }
 
+  function isRefundOffset(record) {
+    // 支付宝记账本里真正用于冲减支出的退款，通常是：分类=退款 + 收支类型=不计收支。
+    // 不用备注关键词判断，避免把“淘宝退货-寄件费”等真实成本错误冲减。
+    return rawValue(record, 'category') === '退款' && rawValue(record, 'type') === typeZh.neutral;
+  }
+
+  function refundOffsetRecords(records) {
+    return records.filter(isRefundOffset);
+  }
+
+  function netExpenseAmount(records) {
+    const grossExpense = sum(records, (r) => rawValue(r, 'type') === typeZh.expense);
+    const refundOffset = sum(records, isRefundOffset);
+    return Math.max(0, grossExpense - refundOffset);
+  }
+
   function groupSum(records, keyFn) {
     const map = new Map();
     records.forEach((record) => {
@@ -461,8 +477,11 @@
     const expenses = records.filter((r) => rawValue(r, 'type') === typeZh.expense);
     const incomes = records.filter((r) => rawValue(r, 'type') === typeZh.income);
     const neutrals = records.filter((r) => rawValue(r, 'type') === typeZh.neutral);
+    const refunds = refundOffsetRecords(records);
 
-    const expenseAmount = sum(records, (r) => rawValue(r, 'type') === typeZh.expense);
+    const grossExpenseAmount = sum(records, (r) => rawValue(r, 'type') === typeZh.expense);
+    const refundOffsetAmount = sum(records, isRefundOffset);
+    const expenseAmount = Math.max(0, grossExpenseAmount - refundOffsetAmount);
     const incomeAmount = sum(records, (r) => rawValue(r, 'type') === typeZh.income);
     const excludedAmount = sum(records, (r) => rawValue(r, 'type') === typeZh.neutral);
     const net = incomeAmount - expenseAmount;
@@ -471,9 +490,14 @@
     $('#totalIncome').text(formatMoney(incomeAmount));
     $('#totalExcluded').text(formatMoney(excludedAmount));
     $('#netCashflow').text(formatMoney(net));
-    $('#expenseCount').text(countText(expenses.length));
+
+    const refundText = refundOffsetAmount > 0
+      ? `${countText(expenses.length)} · ${t('refundDeducted')} ${formatMoney(refundOffsetAmount)}`
+      : countText(expenses.length);
+
+    $('#expenseCount').text(refundText);
     $('#incomeCount').text(countText(incomes.length));
-    $('#excludedCount').text(countText(neutrals.length));
+    $('#excludedCount').text(`${countText(neutrals.length)} · ${t('refundRows')} ${refunds.length}`);
     $('#recordCount').text(countText(records.length));
   }
 
