@@ -396,6 +396,43 @@
       .sort((a, b) => b.amount - a.amount);
   }
 
+  function groupNetExpense(records, keyFn) {
+    // 净支出口径：支出为正数，支付宝退款抵扣为负数。
+    // 退款本身没有原始消费分类时，会作为“退款抵扣”行展示，保证分项合计 = 上方净支出。
+    const map = new Map();
+    records.forEach((record) => {
+      const rawType = rawValue(record, 'type');
+      if (rawType !== typeZh.expense && !isRefundOffset(record)) return;
+
+      let key = keyFn(record) || '-';
+      let amount = record.amount;
+      if (isRefundOffset(record)) {
+        amount = -record.amount;
+        if (keyFn === categoryKey) key = t('refundOffsetCategory');
+      }
+      map.set(key, (map.get(key) || 0) + amount);
+    });
+
+    return Array.from(map.entries())
+      .map(([key, amount]) => ({ key, amount }))
+      .filter((item) => Math.abs(item.amount) > 0.000001)
+      .sort((a, b) => b.amount - a.amount);
+  }
+
+  function categoryKey(record) {
+    return rawValue(record, 'category') || '-';
+  }
+
+  function tagKey(record) {
+    return record.tag || '-';
+  }
+
+  function formatBreakdownMoney(value) {
+    const n = Number(value) || 0;
+    if (n < 0) return `-${formatMoney(Math.abs(n))}`;
+    return formatMoney(n);
+  }
+
   function normalizeTagFilterValue(value) {
     return value === '-' ? '' : String(value ?? '');
   }
@@ -558,38 +595,43 @@
       $el.append(`<div class="empty-mini">${escapeHtml(t('noRows'))}</div>`);
       return;
     }
+    const maxAbs = Math.max(...items.map((x) => Math.abs(x.amount)), total, 1);
     items.slice(0, 10).forEach((item) => {
       const percent = total ? (item.amount / total) * 100 : 0;
+      const width = Math.max(2, Math.min(100, (Math.abs(item.amount) / maxAbs) * 100));
       const label = valueLabelFn ? valueLabelFn(item.key) : item.key;
       const filterType = opts.filterType || '';
+      const isRefundOffsetRow = item.key === t('refundOffsetCategory');
       const filterValue = filterType === 'tag' ? normalizeTagFilterValue(item.key) : String(item.key ?? '');
-      const active = (filterType === 'category' && state.category === filterValue) ||
-        (filterType === 'tag' && state.tag === filterValue);
-      const clickableAttrs = filterType
+      const active = !isRefundOffsetRow && ((filterType === 'category' && state.category === filterValue) ||
+        (filterType === 'tag' && state.tag === filterValue));
+      const clickableAttrs = filterType && !isRefundOffsetRow
         ? ` role="button" tabindex="0" data-filter-type="${escapeAttr(filterType)}" data-filter-value="${escapeAttr(filterValue)}" title="${escapeAttr(t('clickViewDetails'))}"`
         : '';
       const activeBadge = active ? `<small class="active-filter-badge">${escapeHtml(t('activeFilter'))}</small>` : '';
+      const deductionBadge = item.amount < 0 ? `<small class="deduction-badge">${escapeHtml(t('refundDeducted'))}</small>` : '';
       $el.append(`
-        <div class="rank-row ${filterType ? 'rank-row-clickable' : ''} ${active ? 'active' : ''}"${clickableAttrs}>
+        <div class="rank-row ${filterType && !isRefundOffsetRow ? 'rank-row-clickable' : ''} ${active ? 'active' : ''} ${item.amount < 0 ? 'deduction-row' : ''}"${clickableAttrs}>
           <div class="rank-name">
             <b title="${escapeAttr(label)}">${escapeHtml(label)}</b>
             <small>${percent.toFixed(1)}%</small>
             ${activeBadge}
+            ${deductionBadge}
           </div>
-          <div class="rank-amount">${escapeHtml(formatMoney(item.amount))}</div>
-          <div class="progress"><span style="width:${Math.max(2, percent)}%"></span></div>
+          <div class="rank-amount">${escapeHtml(formatBreakdownMoney(item.amount))}</div>
+          <div class="progress"><span style="width:${width}%"></span></div>
         </div>
       `);
     });
   }
 
   function renderBreakdowns(records) {
-    const expenses = expenseRecords(records);
-    const total = sum(expenses, () => true);
-    const byCategory = groupSum(expenses, (r) => rawValue(r, 'category'));
-    const byTag = groupSum(expenses, (r) => r.tag || '-');
+    const total = netExpenseAmount(records);
+    const byCategory = groupNetExpense(records, categoryKey);
+    const byTag = groupNetExpense(records, tagKey);
     $('#categoryTotal').text(formatMoney(total));
-    renderRankList('#categoryChart', byCategory, total, (key) => CashbookI18N.translateValue('category', key, state.lang), { filterType: 'category' });
+    $('#tagTotal').text(formatMoney(total));
+    renderRankList('#categoryChart', byCategory, total, (key) => key === t('refundOffsetCategory') ? key : CashbookI18N.translateValue('category', key, state.lang), { filterType: 'category' });
     renderRankList('#tagChart', byTag, total, (key) => key || '-', { filterType: 'tag' });
   }
 
