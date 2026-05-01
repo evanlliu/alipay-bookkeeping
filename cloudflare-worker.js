@@ -1,5 +1,5 @@
 /**
- * Alipay Cashbook Dashboard - Cloudflare Worker Sync API
+ * Alipay Cashbook Dashboard - Cloudflare Worker Sync API V17
  *
  * 环境变量（Cloudflare Worker Settings -> Variables）：
  * GH_TOKEN  必填：GitHub fine-grained token，需要 Contents: Read and write
@@ -12,22 +12,24 @@
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET,POST,PUT,OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, X-Access-Password',
+  'Access-Control-Allow-Methods': 'GET,HEAD,POST,PUT,OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, X-Access-Password, Authorization, Accept',
   'Access-Control-Max-Age': '86400'
 };
+
+function withCors(headers = {}) {
+  return { ...CORS_HEADERS, ...headers };
+}
 
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body, null, 2), {
     status,
-    headers: {
-      ...CORS_HEADERS,
+    headers: withCors({
       'Content-Type': 'application/json;charset=utf-8',
       'Cache-Control': 'no-store'
-    }
+    })
   });
 }
-
 
 function verifyAccessPassword(request, env) {
   const expected = env.ACCESS_PASSWORD || '';
@@ -124,7 +126,7 @@ async function writeDataJson(env, payload) {
   const incomingSync = payload && payload.sync && typeof payload.sync === 'object' ? payload.sync : {};
   const nextPayload = {
     app: 'alipay-cashbook-dashboard',
-    version: 16,
+    version: 17,
     updatedAt: new Date().toISOString(),
     sync: {
       provider: 'cloudflare-worker',
@@ -165,6 +167,12 @@ async function writeDataJson(env, payload) {
   };
 }
 
+function routeName(request) {
+  const url = new URL(request.url);
+  const path = url.pathname.replace(/\/+$/, '') || '/';
+  return path;
+}
+
 export default {
   async fetch(request, env) {
     if (request.method === 'OPTIONS') {
@@ -172,11 +180,25 @@ export default {
     }
 
     try {
+      const path = routeName(request);
+
+      if (path === '/health') {
+        return jsonResponse({ ok: true, service: 'alipay-cashbook-worker', version: 17 });
+      }
+
+      // 允许根路径和 /data，都按同一个 data.json API 处理，避免 URL 填写差异导致失败。
+      if (path !== '/' && path !== '/data') {
+        return jsonResponse({ error: 'Not found', path }, 404);
+      }
+
       verifyAccessPassword(request, env);
 
-      if (request.method === 'GET') {
+      if (request.method === 'GET' || request.method === 'HEAD') {
         const payload = await readDataJson(env);
         delete payload.githubSha;
+        if (request.method === 'HEAD') {
+          return new Response(null, { status: 200, headers: withCors({ 'Cache-Control': 'no-store' }) });
+        }
         return jsonResponse(payload);
       }
 

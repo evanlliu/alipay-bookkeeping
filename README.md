@@ -1,8 +1,8 @@
-# 支付宝记账本支出看板 V16 - 页面同步设置版
+# 支付宝记账本支出看板 V17 - 页面同步设置版
 
 ## 这版解决什么问题
 
-V16 把 Cloudflare Worker 同步配置做成了页面弹窗：
+V17 把 Cloudflare Worker 同步配置做成了页面弹窗：
 
 ```text
 同步设置
@@ -120,3 +120,17 @@ Worker 自动提交 data.json 到 GitHub
 电脑：Ctrl + F5
 手机 Safari 主屏幕 App：删除图标后重新添加
 ```
+
+
+## V17 修复
+
+- 修复 GitHub Pages 请求 Cloudflare Worker 时可能出现的 `Failed to fetch` / CORS 预检失败。
+- Worker 同时支持 `/`、`/data`、`/health` 路径。
+- 请把 `cloudflare-worker.js` 的代码复制到 Cloudflare Worker，并点击 Deploy。
+
+
+## V18 更新
+
+- 修复移动端 iPhone/PWA 顶部状态栏安全区不兼容问题。
+- 优化移动端明细记录卡片布局，金额固定在右侧，不再被备注内容挤压换行。
+- 长备注、账户、来源、标签自动截断或换行，避免卡片横向溢出。
