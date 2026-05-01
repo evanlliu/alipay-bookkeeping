@@ -396,20 +396,108 @@
       .sort((a, b) => b.amount - a.amount);
   }
 
+  function normalizeMatchText(value) {
+    return String(value || '')
+      .replace(/^退款[-：:\s]*/g, '')
+      .replace(/商户单号[A-Za-z0-9]+/g, '')
+      .replace(/复制该单号.*$/g, '')
+      .replace(/[\s，,。._\-—【】\[\]（）()：:]/g, '')
+      .toLowerCase();
+  }
+
+  function timeValue(record) {
+    const n = Date.parse(String(record.time || '').replace(/-/g, '/'));
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  function amountEqual(a, b) {
+    return Math.abs((Number(a) || 0) - (Number(b) || 0)) < 0.005;
+  }
+
+  function buildRefundMatchMap(records) {
+    // 将支付宝“退款 / 不计收支”尽量匹配回原消费。
+    // 这样标签支出、分类支出能体现真实净花费：原支出 300，退款 300 => 该标签/分类为 0。
+    const expenses = records
+      .filter((r) => rawValue(r, 'type') === typeZh.expense)
+      .map((r) => ({ record: r, used: false, time: timeValue(r), noteText: normalizeMatchText(rawValue(r, 'note') || localValue(r, 'note')) }))
+      .sort((a, b) => b.time - a.time);
+
+    const matches = new Map();
+
+    refundOffsetRecords(records)
+      .slice()
+      .sort((a, b) => timeValue(a) - timeValue(b))
+      .forEach((refund) => {
+        const refundTime = timeValue(refund);
+        const refundText = normalizeMatchText(rawValue(refund, 'note') || localValue(refund, 'note'));
+        const refundTag = String(refund.tag || '').trim();
+
+        let best = null;
+        let bestScore = -Infinity;
+
+        expenses.forEach((candidate) => {
+          if (candidate.used) return;
+          const expense = candidate.record;
+          if (!amountEqual(expense.amount, refund.amount)) return;
+
+          const expenseTime = candidate.time;
+          const dayGap = Math.abs(refundTime - expenseTime) / 86400000;
+          const isBeforeRefund = !refundTime || !expenseTime || expenseTime <= refundTime;
+          const sameAccount = rawValue(expense, 'account') && rawValue(expense, 'account') === rawValue(refund, 'account');
+          const sameSource = rawValue(expense, 'source') && rawValue(expense, 'source') === rawValue(refund, 'source');
+          const sameTag = refundTag && refundTag === String(expense.tag || '').trim();
+          const noteHit = refundText && candidate.noteText && (refundText.includes(candidate.noteText) || candidate.noteText.includes(refundText));
+
+          let score = 1000;
+          if (isBeforeRefund) score += 120;
+          if (sameAccount) score += 80;
+          if (sameSource) score += 20;
+          if (sameTag) score += 100;
+          if (noteHit) score += 180;
+          score -= Math.min(dayGap, 365);
+
+          if (score > bestScore) {
+            bestScore = score;
+            best = candidate;
+          }
+        });
+
+        if (best) {
+          best.used = true;
+          matches.set(refund.id, {
+            expenseId: best.record.id,
+            category: rawValue(best.record, 'category') || '-',
+            tag: best.record.tag || '-',
+            note: rawValue(best.record, 'note') || localValue(best.record, 'note')
+          });
+        }
+      });
+
+    return matches;
+  }
+
   function groupNetExpense(records, keyFn) {
-    // 净支出口径：支出为正数，支付宝退款抵扣为负数。
-    // 退款本身没有原始消费分类时，会作为“退款抵扣”行展示，保证分项合计 = 上方净支出。
+    // 净支出口径：支出为正数，退款匹配回原消费标签/分类后做负数抵扣。
+    const refundMatches = buildRefundMatchMap(records);
     const map = new Map();
+
     records.forEach((record) => {
       const rawType = rawValue(record, 'type');
       if (rawType !== typeZh.expense && !isRefundOffset(record)) return;
 
       let key = keyFn(record) || '-';
       let amount = record.amount;
+
       if (isRefundOffset(record)) {
         amount = -record.amount;
-        if (keyFn === categoryKey) key = t('refundOffsetCategory');
+        const match = refundMatches.get(record.id);
+        if (keyFn === categoryKey) {
+          key = match ? match.category : t('refundOffsetCategory');
+        } else if (keyFn === tagKey) {
+          key = match ? match.tag : (record.tag || '-');
+        }
       }
+
       map.set(key, (map.get(key) || 0) + amount);
     });
 

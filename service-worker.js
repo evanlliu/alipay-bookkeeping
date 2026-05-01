@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cashbook-dashboard-v20-mobile-ui-20260501';
+const CACHE_NAME = 'cashbook-dashboard-v21-refund-match-20260501';
 const ASSETS = [
   './',
   './index.html',
